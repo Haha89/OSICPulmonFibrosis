@@ -1,4 +1,4 @@
-Architecture du Projet
+Projet's architecture
 
 osic-pulmonary-fibrosis-progression/
 	data/
