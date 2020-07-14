@@ -9,6 +9,7 @@ import cv2
 import pandas as pd
 
 PATH_DATA = "../data/"
+MINSPACING = 1/0.286313 #Inverse (pour perf)
 
 def get_path_id(id):
     """Returns the path of the folder containing the patient ID CT scans.
@@ -31,7 +32,7 @@ def get_3d_scan(id, normalized=True):
     the list of slice heights and widths"""
     path_data = get_path_id(id)
     filelist = get_scans_from_id(id)
-    slice_agg, heights, widths = [], [], []
+    slice_agg, spacing, widths = [], 0., 0.
     try:
         for file in filelist:
             data = pydicom.dcmread(f"{path_data}/{file}")
@@ -39,10 +40,9 @@ def get_3d_scan(id, normalized=True):
                 slice_agg.append(normalize_scan(data.pixel_array))
             else:
                 slice_agg.append(data.pixel_array)
-            heights.append(float(data.SliceLocation))
-            widths.append(float(data.SliceThickness))
-    
-        return np.array(slice_agg), heights, widths
+            spacing = data.PixelSpacing
+            widths = float(data.SliceThickness)
+        return np.array(slice_agg), spacing, widths
     except:
         print(f"Error in the creation of the scan for {id}")
     
@@ -72,10 +72,11 @@ def get_random_scan():
     subfolders = [ f.name for f in scandir(PATH_DATA + "train") if f.is_dir() ]
     random_id = choice(subfolders) #Random element from list
     random_scan = choice(get_scans_from_id(random_id))
-    data = pydicom.dcmread(f"{get_path_id(random_id)}/{random_scan}")
     try:
         print(f"Random scan for {random_id}, file {random_scan}")
-        return data.pixel_array, float(data.PixelSpacing), float(data.SliceThickness)
+        return pydicom.dcmread(f"{get_path_id(random_id)}/{random_scan}")
+    
+    
     except:
         print(f"Error during the random scan for {random_id}, file {random_scan}")
     
@@ -87,9 +88,13 @@ def get_specific_scan(id, scan_number):
 
 def normalize_scan(scan, size=(512,512)):
     """Resize the scan and normalize it (values between 0 and 1)"""
-    res = cv2.resize(scan, dsize=size)
+    
+    res = cv2.resize(scan.pixel_array, (int(scan.PixelSpacing[0]*MINSPACING*scan.Rows), int(scan.PixelSpacing[1]*MINSPACING*scan.Columns)))
     min_array = np.min(res)
     return (res - min_array)/(np.max(res) - min_array)  
+    # except:
+    #     print(scan)
+    
 
 
 def preprocessing_data(data):
