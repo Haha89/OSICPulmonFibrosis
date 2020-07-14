@@ -1,17 +1,24 @@
 # -*- coding: utf-8 -*-
 
-import tools
+# import tools
 import numpy as np
-
-pixels, slice_location, slice_thick = tools.get_random_scan()
-
-print("Before normalization")
-print(f"Shape: {np.shape(pixels)}, max {np.max(pixels)}, min {np.min(pixels)}")
-
+import pandas as pd
 import matplotlib.pyplot as plt
-normalized = tools.normalize_scan(pixels)
 
-print("After normalization")
-print(f"Shape: {np.shape(normalized)}, max {np.max(normalized)}, min {np.min(normalized)}")
+PATH_DATA = "../data/"
 
-plt.imshow(normalized, cmap=plt.cm.bone)
+train = pd.read_csv(PATH_DATA + 'train.csv')
+test = pd.read_csv(PATH_DATA + 'train.csv')
+df = pd.concat([train, test])
+
+#Preprocessing
+print(df.head())
+#Transform Weeks, FVC, Percent, Age to a normal distribution
+for col in ["Weeks", "FVC", "Percent", "Age"]:
+    df[col] = (df[col] - df[col].min())/(df[col].max() - df[col].min())
+    df[col].plot(kind='hist')
+    plt.show()
+
+#Encode Sex and Smoker Status to one hot encoding
+df = pd.get_dummies(df, columns=['Sex', 'SmokingStatus'])
+print(df.head())  

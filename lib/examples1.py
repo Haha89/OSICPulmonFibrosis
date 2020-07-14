@@ -3,6 +3,7 @@
 import tools
 import pydicom
 import matplotlib.pyplot as plt
+import numpy as np
 
 # =============================================================================
 # Display the list of CT scans of a patient
@@ -25,7 +26,7 @@ id = "ID00007637202177411956430"
 # =============================================================================
 # Aggregates the CT scans into a numpy 3d array
 # =============================================================================
-# matrix, heights, widths = tools.get_3d_scan(id)
+# matrix, heights, widths = tools.get_3d_scan(id, normalized=False)
 
 # =============================================================================
 # Annimation of the 3d matrix slice by slice
@@ -35,17 +36,27 @@ id = "ID00007637202177411956430"
 # print(heights)
 # print(widths)
 
+# =============================================================================
+# 
+# =============================================================================
+
+data = tools.get_specific_scan("ID00086637202203494931510", 4)
+plt.imshow(data.pixel_array)
 
 # =============================================================================
 # Get random ct scan
 # =============================================================================
+ 
+pixels, slice_location, slice_thick = tools.get_random_scan()
 
+print("Before normalization")
+print(f"Shape: {np.shape(pixels)}, max {np.max(pixels)}, min {np.min(pixels)}")
 
+import matplotlib.pyplot as plt
+normalized = tools.normalize_scan(pixels)
 
-# for i in range(500):
-#     arr, he, wid = tools.get_random_scan()
-    
-    
-data = tools.get_specific_scan("ID00086637202203494931510", 4)
-print(data.pixel_array)
-plt.imshow(data.pixel_array)
+print("After normalization")
+print(f"Shape: {np.shape(normalized)}, max {np.max(normalized)}, min {np.min(normalized)}")
+
+plt.imshow(normalized, cmap=plt.cm.bone)
+
