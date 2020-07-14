@@ -4,6 +4,7 @@ import tools
 import pydicom
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 # =============================================================================
 # Display the list of CT scans of a patient

@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import pydicom
 from random import choice
 import cv2
+import pandas as pd
 
 PATH_DATA = "../data/"
 
@@ -83,9 +84,27 @@ def get_specific_scan(id, scan_number):
     """Returns the data of a specific patient, specific scan"""
     return pydicom.dcmread(f"{get_path_id(id)}/{scan_number}.dcm")
 
+
 def normalize_scan(scan, size=(512,512)):
     """Resize the scan and normalize it (values between 0 and 1)"""
     res = cv2.resize(scan, dsize=size)
     min_array = np.min(res)
     return (res - min_array)/(np.max(res) - min_array)  
+
+
+def preprocessing_data(data):
     
+    data = pd.get_dummies(data, columns=['Sex', 'SmokingStatus'])
+    
+    # =============================================================================
+    # Transform Weeks, FVC, Percent, Age to be in [0, 1]
+    # =============================================================================
+    for col in ["Weeks", "FVC", "Percent", "Age"]:
+        data[col] = (data[col] - data[col].min())/(data[col].max() - data[col].min())
+
+    # =============================================================================
+    # Transformation pour etre des lois normales TODO
+    # =============================================================================
+    # from sklearn.preprocessing import PowerTransformer
+    # yj = PowerTransformer(method='yeo-johnson')
+    return data
