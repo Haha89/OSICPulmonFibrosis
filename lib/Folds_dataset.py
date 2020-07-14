@@ -58,14 +58,12 @@ def make_folds(path, nb_folds):
     return(fold_label-1)
 
 #Pour un fold donnÃ©, crÃ©e le testing set et training set en fonction de fold_label  
-def train_test_valid_split(fold_label, nb_fold):
+def train_test_indices(fold_label, nb_fold):
     
     indices_train = np.where(fold_label != nb_fold)[0]
-    test_and_val = np.where(fold_label == nb_fold)[0]
+    indices_test = np.where(fold_label == nb_fold)[0]
     
-    indices_test = test_and_val[:(len(test_and_val)//2)]
-    indices_valid = test_and_val[(len(test_and_val)//2):]
-    return(indices_train, indices_test, indices_valid)
+    return(indices_train, indices_test)
 
 
 
