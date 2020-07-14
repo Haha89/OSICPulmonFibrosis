@@ -2,6 +2,7 @@
 
 import tools
 import pydicom
+import matplotlib.pyplot as plt
 
 # =============================================================================
 # Display the list of CT scans of a patient
@@ -24,15 +25,15 @@ id = "ID00007637202177411956430"
 # =============================================================================
 # Aggregates the CT scans into a numpy 3d array
 # =============================================================================
-matrix, heights, widths = tools.get_3d_scan(id)
+# matrix, heights, widths = tools.get_3d_scan(id)
 
 # =============================================================================
 # Annimation of the 3d matrix slice by slice
 # =============================================================================
-print("Scroll to animate")
-tools.multi_slice_viewer(matrix)
-print(heights)
-print(widths)
+# print("Scroll to animate")
+# tools.multi_slice_viewer(matrix)
+# print(heights)
+# print(widths)
 
 
 # =============================================================================
@@ -45,4 +46,6 @@ print(widths)
 #     arr, he, wid = tools.get_random_scan()
     
     
-# print(tools.get_specific_scan("ID00128637202219474716089", 9))
+data = tools.get_specific_scan("ID00086637202203494931510", 4)
+print(data.pixel_array)
+plt.imshow(data.pixel_array)

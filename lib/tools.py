@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pydicom
 from random import choice
+import cv2
 
 PATH_DATA = "../data/"
 
@@ -24,7 +25,7 @@ def get_scans_from_id(id):
         return sorted(listdir(path_folder), key=lambda f : int(f.split(".")[0]))
 
 
-def get_3d_scan(id):
+def get_3d_scan(id, normalized=True):
     """Return a 3d matrix of the different slices (ct scans) of a patient, 
     the list of slice heights and widths"""
     path_data = get_path_id(id)
@@ -33,7 +34,10 @@ def get_3d_scan(id):
     try:
         for file in filelist:
             data = pydicom.dcmread(f"{path_data}/{file}")
-            slice_agg.append(data.pixel_array)
+            if normalized:
+                slice_agg.append(normalize_scan(data.pixel_array))
+            else:
+                slice_agg.append(data.pixel_array)
             heights.append(float(data.SliceLocation))
             widths.append(float(data.SliceThickness))
     
@@ -69,6 +73,7 @@ def get_random_scan():
     random_scan = choice(get_scans_from_id(random_id))
     data = pydicom.dcmread(f"{get_path_id(random_id)}/{random_scan}")
     try:
+        print(f"Random scan for {random_id}, file {random_scan}")
         return data.pixel_array, float(data.SliceLocation), float(data.SliceThickness)
     except:
         print(f"Error during the random scan for {random_id}, file {random_scan}")
@@ -77,3 +82,10 @@ def get_random_scan():
 def get_specific_scan(id, scan_number):
     """Returns the data of a specific patient, specific scan"""
     return pydicom.dcmread(f"{get_path_id(id)}/{scan_number}.dcm")
+
+def normalize_scan(scan, size=(512,512)):
+    """Resize the scan and normalize it (values between 0 and 1)"""
+    res = cv2.resize(scan, dsize=size)
+    min_array = np.min(res)
+    return (res - min_array)/(np.max(res) - min_array)  
+    
