@@ -75,7 +75,7 @@ def get_random_scan():
     data = pydicom.dcmread(f"{get_path_id(random_id)}/{random_scan}")
     try:
         print(f"Random scan for {random_id}, file {random_scan}")
-        return data.pixel_array, float(data.SliceLocation), float(data.SliceThickness)
+        return data.pixel_array, float(data.PixelSpacing), float(data.SliceThickness)
     except:
         print(f"Error during the random scan for {random_id}, file {random_scan}")
     
