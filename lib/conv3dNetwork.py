@@ -18,7 +18,6 @@ os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICE"] = "0"
 device = ("0" if torch.cuda.is_available() else "cpu" )
 """
-# Dossier oÃ¹ se trouvent les fichiers + j'ai 2 dossiers Pred_lstm et Pred_auxiliary pour stocker les prÃ©dictions
 
 class Convolutionnal_Network(nn.Module):
 
@@ -124,19 +123,6 @@ class Convolutionnal_Network(nn.Module):
         return outputs
     
     
-    def laplace_log_likelihood(actual_fvc, predicted_fvc, confidence):
-        """
-        Calculates the modified Laplace Log Likelihood score for this competition.
-        """
-        std_min = torch.tensor([70]).cuda()
-        delta_max = torch.tensor([1000]).cuda()
-        
-        std_clipped = torch.max(confidence, std_min)
-        delta = torch.min(torch.abs(actual_fvc - predicted_fvc), delta_max)
-        
-        metric = - sqrt(2) * delta / std_clipped - torch.log(sqrt(2) * std_clipped)
-    
-        return -torch.mean(metric)
 
     
    
