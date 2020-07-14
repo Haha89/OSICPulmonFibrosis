@@ -111,7 +111,7 @@ class Convolutionnal_Network(nn.Module):
         x = F.relu(self.Conv41(x))
         x = F.relu(self.Conv42(x))
         
-        x = torch.cat((x,interm0,interm1,interm2, interm3)) 
+        x = torch.cat((x,interm0,interm1,interm2, interm3), dim=1) 
         batch_size, depth, width, height = x.shape
         
         x = x.view(batch_size,-1)
