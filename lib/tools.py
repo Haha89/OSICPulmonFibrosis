@@ -5,7 +5,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pydicom
 from random import choice
-import cv2
 import pandas as pd
 from scipy.ndimage import zoom
 import sys
@@ -62,31 +61,35 @@ def get_data_patient(id_patient=None, indice=None):
     
     if id_patient is None:
         id_patient = get_id_folders(indice)
-    matrix, spacing, thickness = get_3d_scan(id_patient)
-    processed_mat = np.zeros(SCAN_SIZE)
-    
+    matrix, spacing, thickness = get_3d_scan(id_patient) 
     nb_slice, nb_row, nb_col = np.shape(matrix)
+    
+    #Resizing factors
     fx = spacing[0]/PIXEL_SPACING
     fy = spacing[1]/PIXEL_SPACING
     fz = thickness/THICKNESS
-    resized_mat = zoom(matrix, (fz, fx, fy))
-    #cut 128x128x128 ou paddle si pas assez
-    z,x,y = resized_mat.shape
-    startx = (x - SCAN_SIZE[1])//2
-    starty = (y - SCAN_SIZE[2])//2
-    startz = (z - SCAN_SIZE[0])//2
-    resized_mat = resized_mat[startz:startz+SCAN_SIZE[0], startx:startx+SCAN_SIZE[1], starty:starty+SCAN_SIZE[2]]
-    z,x,y = resized_mat.shape
     
-    #Add padding based on size
+    #cut 128/fx x128/fy x128/fz 
+    z,x,y = matrix.shape
+    startx = max(0, (x - SCAN_SIZE[1]/fx)//2)
+    starty = max(0, (y - SCAN_SIZE[2]/fy)//2)
+    startz = max(0, (z - SCAN_SIZE[0]/fz)//2)
+
+    resized_mat = matrix[int(startz):int(startz+SCAN_SIZE[0]//fz),
+                         int(startx):int(startx+SCAN_SIZE[1]//fx),
+                         int(starty):int(starty+SCAN_SIZE[2]//fy)]
+    resized_mat = zoom(resized_mat, (fz, fx, fy))
+        
+    # #Add padding based on size
+    z,x,y = resized_mat.shape
     z1 = (SCAN_SIZE[0] - z)//2
-    z2 = (SCAN_SIZE[0] - z + 1)//2
+    z2 = (SCAN_SIZE[0]- z + 1)//2
     y1 = (SCAN_SIZE[2] - y)//2
     y2 = (SCAN_SIZE[2] - y + 1)//2
     x1 = (SCAN_SIZE[1] - x)//2
     x2 = (SCAN_SIZE[1] - x + 1)//2
     
-    processed_mat=np.pad(resized_mat, ((z1, z2), (x1, x2), (y1, y2)), 'constant') #Always size SCAN_SIZE
+    processed_mat=np.pad(resized_mat, ((z1, z2), (x1, x2), (y1, y2)), 'constant') #Always size SCAN_SIZE    
     min_matrix = np.min(processed_mat) #Normalization
     return (processed_mat-min_matrix)/(np.max(processed_mat)-min_matrix)
     
@@ -127,30 +130,6 @@ def get_specific_scan(id, scan_number):
     """Returns the data of a specific patient, specific scan"""
     return pydicom.dcmread(f"{get_path_id(id)}/{scan_number}.dcm")
 
-
-def normalize_scan(scan, size_target=[128,128]):
-    """Resize the scan and normalize it (values between 0 and 1).
-    The output matrix is 128*128 with a pixel spacing of 0.4"""
-    res = cv2.resize(scan.pixel_array, 
-                     (int(scan.PixelSpacing[0]/PIXEL_SPACING*scan.Rows),
-                      int(scan.PixelSpacing[1]/PIXEL_SPACING*scan.Columns)))
-    x, y = np.shape(res)
-    if (x < size_target[0]) or (y < size_target[1]): #Result smaller than 128*128
-        pass
-    else: #Picture too big, need to crop. Will keep only the center of picture
-        y1, y2 = int(.5*(y - size_target[1])), int(.5*(y + size_target[1]))
-        x1, x2 = int(.5*(x - size_target[0])), int(.5*(x + size_target[0]))
-        res = res[y1:y2, x1:x2]
-    return np.array((res - np.min(res))/(np.max(res) - np.min(res))) #Normalisation between [0,1]
-
-
-def normalize_scan_3d(matrix_3d, pixel_spacing, thickness, size_target=[128,128, 128]):
-    #Resize each slice based on pixel spacing
-    print(np.shape(matrix_3d))
-    for i in matrix_3d:
-        pass
-
-    
     
 def preprocessing_data(data):
     #Creation of one hot encoder, normalisation between [0,1]
@@ -164,3 +143,10 @@ def preprocessing_data(data):
     # from sklearn.preprocessing import PowerTransformer
     # yj = PowerTransformer(method='yeo-johnson')
     return data
+
+def filter_data(data, id_patient):
+    """Returns the data only for the id_patient"""
+    filtered_data = data[data.Patient == id_patient]
+    fvc = filtered_data.FVC
+    other = filtered_data.drop('FVC', axis=1)
+    return other, fvc

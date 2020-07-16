@@ -44,21 +44,7 @@ id = "ID00026637202179561894768"
 # plt.imshow(data.pixel_array)
 
 # =============================================================================
-# Get random ct scan
+# Preprocessing of a 3d scan
 # =============================================================================
-# data = tools.get_random_scan()
-# print(data)
-
-# print("Before normalization")
-
-
-# normalized = tools.normalize_scan(data)
-
-# print("After normalization")
-# print(f"Shape: {np.shape(normalized)}, max {np.max(normalized)}, min {np.min(normalized)}")
-
-# plt.imshow(normalized, cmap=plt.cm.bone)
-
-for i in tqdm(range(10)):
-    processed_mat = tools.get_data_patient(indice=i)
-# tools.multi_slice_viewer(processed_mat)
+processed_mat = tools.get_data_patient(indice=1)
+tools.multi_slice_viewer(processed_mat)
