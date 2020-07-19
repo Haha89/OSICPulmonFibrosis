@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from os import listdir, path, scandir
+import torch
 import numpy as np
 import matplotlib.pyplot as plt
 import pydicom
@@ -9,7 +10,7 @@ import pandas as pd
 from scipy.ndimage import zoom
 import sys
 
-PATH_DATA = "../data/"
+PATH_DATA = "C:/Users/Benjamin/Desktop/Kaggle/osic-pulmonary-fibrosis-progression/"
 PIXEL_SPACING = 0.8
 THICKNESS = 1
 SCAN_SIZE = [128, 128, 128] #z, x, y
@@ -130,23 +131,43 @@ def get_specific_scan(id, scan_number):
     """Returns the data of a specific patient, specific scan"""
     return pydicom.dcmread(f"{get_path_id(id)}/{scan_number}.dcm")
 
-    
+def unormalize_fvc(data):
+    return(data["FVC"].min(),data["FVC"].max())
+
 def preprocessing_data(data):
     #Creation of one hot encoder, normalisation between [0,1]
     data = pd.get_dummies(data, columns=['Sex', 'SmokingStatus'])
-
     # Transform Weeks, FVC, Percent, Age to be in [0, 1]
-    for col in ["Weeks", "FVC", "Percent", "Age"]:
+    for col in ["Weeks", "FVC", "Age"]:
         data[col] = (data[col] - data[col].min())/(data[col].max() - data[col].min())
-
+    data["Percent"] = data["Percent"]/100.
     # Transformation pour etre des lois normales TODO and TRY
     # from sklearn.preprocessing import PowerTransformer
     # yj = PowerTransformer(method='yeo-johnson')
     return data
 
-def filter_data(data, id_patient):
+def filter_data(data, id_patient=None, indice=None):
+    if id_patient is None:
+        id_patient = get_id_folders(indice)
     """Returns the data only for the id_patient"""
     filtered_data = data[data.Patient == id_patient]
     fvc = filtered_data.FVC
-    other = filtered_data.drop('FVC', axis=1)
-    return other, fvc
+    percent = filtered_data.Percent
+    fvc = torch.tensor(np.array(fvc))
+    percent = torch.tensor(np.array(percent))
+    misc = torch.zeros((len(fvc),4))
+    misc[:,0] = torch.tensor(np.array(filtered_data.Weeks))
+    misc[:,1] = torch.tensor(np.array(filtered_data.Age))
+    misc[:,2] = torch.tensor(np.array(filtered_data.Sex_Male))
+    misc[:,3] = torch.tensor(0.5*np.array(filtered_data['SmokingStatus_Currently smokes']) +\
+        np.array(filtered_data['SmokingStatus_Ex-smoker']))
+    
+    return misc, fvc, percent
+
+
+def get_data(path): 
+    raw_data = pd.read_csv(path + 'train.csv')
+    #mini, maxi = unormalize_fvc(raw_data)
+    #np.save("minmax",np.array([mini,maxi]))
+    normalized = preprocessing_data(raw_data)
+    return(normalized)

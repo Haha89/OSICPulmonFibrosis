@@ -20,6 +20,6 @@ def laplace_log_likelihood(actual_fvc, predicted_fvc, confidence):
     std_clipped = torch.max(confidence, std_min)
     delta = torch.min(torch.abs(actual_fvc - predicted_fvc), delta_max)
     
-    metric = - sqrt(2) * delta / std_clipped - torch.log(sqrt(2) * sd_clipped)
+    metric = - sqrt(2) * delta / std_clipped - torch.log(sqrt(2) * std_clipped)
 
-    return torch.mean(metric)
+    return -torch.mean(metric)

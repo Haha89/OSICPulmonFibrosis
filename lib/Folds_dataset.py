@@ -7,21 +7,22 @@ Created on Tue Jul 14 15:53:53 2020
 
 import numpy as np
 import os 
+import torch
 import random
-from torch.util import data
+from torch.utils import data
 import time
 from os import scandir
-from tools import *
+from tools import * 
 
-path = '..'
+path = 'C:/Users/Benjamin/Desktop/Kaggle/osic-pulmonary-fibrosis-progression/'
 
 class Dataset(data.Dataset):
   'Characterizes a dataset for PyTorch'
   def __init__(self, path, indices):
         'Initialization'
         self.indices = indices
-        self.list_of_ids = np.array(os.listdir(path))[self.indices]
-        
+        self.list_of_ids = np.array(os.listdir(path + 'train/'))[self.indices]
+        self.data = get_data(path)
         
   def __len__(self):
         'Denotes the total number of samples'
@@ -30,10 +31,10 @@ class Dataset(data.Dataset):
   def __getitem__(self, index):
         'Generates one sample of data'
         # Select sample
-        scan = get_3d_scan(self.list_of_ids[index], True)
-        data, FVC = ###Waiting for loading function
-
-        return (scan,data,FVC)
+        scan = get_data_patient(self.list_of_ids[index])
+        misc, FVC, percent = filter_data(self.data, self.list_of_ids[index])
+        scan = torch.tensor(scan).unsqueeze(0)
+        return (scan.float(),misc.float(),FVC.float(), percent.float())
 
 
 #Fonction qui permet de labeliser nos entrÃ©es de 0 Ã  nb_folds pour k-fold cross validation  
@@ -66,11 +67,10 @@ def train_test_indices(fold_label, nb_fold):
     return(indices_train, indices_test)
 
 
-
-
-
-
-
+"""
+folds = make_folds(path,4)
+np.save("4-folds-split",folds)
+"""
 
 
 
