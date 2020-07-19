@@ -22,4 +22,4 @@ def laplace_log_likelihood(actual_fvc, predicted_fvc, confidence):
     
     metric = - sqrt(2) * delta / std_clipped - torch.log(sqrt(2) * std_clipped)
 
-    return -torch.mean(metric)
+    return - torch.mean(metric)

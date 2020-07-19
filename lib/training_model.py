@@ -28,6 +28,8 @@ os.environ["CUDA_VISIBLE_DEVICE"] = "0"
 """
 
 path= 'C:/Users/Benjamin/Desktop/Kaggle/osic-pulmonary-fibrosis-progression/'
+#path= "E:/DataScience/Kaggle Challenges/osic-pulmonary-fibrosis-progression/"
+
 
 extremums = np.load("minmax.npy")
 mini = extremums[0]

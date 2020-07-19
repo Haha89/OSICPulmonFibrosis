@@ -151,14 +151,13 @@ def filter_data(data, id_patient=None, indice=None):
         id_patient = get_id_folders(indice)
     """Returns the data only for the id_patient"""
     filtered_data = data[data.Patient == id_patient]
-    fvc = filtered_data.FVC
-    percent = filtered_data.Percent
-    fvc = torch.tensor(np.array(fvc))
-    percent = torch.tensor(np.array(percent))
-    misc = torch.zeros((len(fvc),4))
-    misc[:,0] = torch.tensor(np.array(filtered_data.Weeks))
-    misc[:,1] = torch.tensor(np.array(filtered_data.Age))
-    misc[:,2] = torch.tensor(np.array(filtered_data.Sex_Male))
+    fvc = torch.tensor(filtered_data.FVC.values)
+    percent = torch.tensor(filtered_data.Percent.values)
+    
+    misc = torch.zeros((len(fvc), 4))
+    misc[:,0] = torch.tensor(filtered_data.Weeks.values)
+    misc[:,1] = torch.tensor(filtered_data.Age.values)
+    misc[:,2] = torch.tensor(filtered_data.Sex_Male.values)
     misc[:,3] = torch.tensor(0.5*np.array(filtered_data['SmokingStatus_Currently smokes']) +\
         np.array(filtered_data['SmokingStatus_Ex-smoker']))
     

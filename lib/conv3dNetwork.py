@@ -89,11 +89,7 @@ class Convolutionnal_Network(nn.Module):
         self.postpross1 = nn.Linear(self.input_dim*self.multiplicator*(16+8+4+2+1)*self.shape[0]*self.shape[1]*self.shape[2]//(16*16*16),self.hidden_dim_linear*2)
         self.postpross2 = nn.Linear(self.hidden_dim_linear*2,self.hidden_dim_linear)
 
-        
-
         self.out = nn.Linear(self.hidden_dim_linear,self.output_dim)
-
-
 
         ###
         self.data_process1 = nn.Linear(self.output_dim + self.misc_dim, self.hidden_dim_linear)
@@ -110,7 +106,6 @@ class Convolutionnal_Network(nn.Module):
         self.postprocess2 = nn.Linear(self.hidden_dim_linear, 2)
 
     
-        
     def forward(self, scans, misc, fvc, percent):
         
         batch_size, channels, depth, width, height = scans.shape
@@ -123,13 +118,11 @@ class Convolutionnal_Network(nn.Module):
         interm0 = self.reduce0(x)
         x = self.pool0(x)
 
-
         x = F.relu(self.bn11(self.Conv11(x)))
         x = F.relu(self.bn12(self.Conv12(x)))
  
         interm1 = self.reduce1(x)
         x = self.pool1(x)
-        
         
         x = F.relu(self.bn21(self.Conv21(x)))
         x = F.relu(self.bn22(self.Conv22(x)))

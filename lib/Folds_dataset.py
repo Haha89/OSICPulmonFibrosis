@@ -11,13 +11,12 @@ import torch
 import random
 from torch.utils import data
 import time
-from os import scandir
 from tools import * 
 
 path = 'C:/Users/Benjamin/Desktop/Kaggle/osic-pulmonary-fibrosis-progression/'
 
 class Dataset(data.Dataset):
-  'Characterizes a dataset for PyTorch'
+  """Characterizes a dataset for PyTorch"""
   def __init__(self, path, indices):
         'Initialization'
         self.indices = indices
@@ -34,11 +33,13 @@ class Dataset(data.Dataset):
         scan = get_data_patient(self.list_of_ids[index])
         misc, FVC, percent = filter_data(self.data, self.list_of_ids[index])
         scan = torch.tensor(scan).unsqueeze(0)
-        return (scan.float(),misc.float(),FVC.float(), percent.float())
+        return (scan.float(), misc.float(), FVC.float(), percent.float())
 
 
-#Fonction qui permet de labeliser nos entrÃ©es de 0 Ã  nb_folds pour k-fold cross validation  
 def make_folds(path, nb_folds):
+    """Fonction qui permet de labeliser nos entrees de 0 a  
+    nb_folds pour k-fold cross validation """
+    
     batch_size = len(os.listdir(path + 'train/'))
     subfolders = [i for i in range(batch_size)]
       #Chaque donnÃ©e Ã  un label
@@ -58,12 +59,12 @@ def make_folds(path, nb_folds):
     # Et fold_label[k] contient le label appartenant Ã  [0, nb_fold-A] correspondant Ã  input[k,:,:]
     return(fold_label-1)
 
-#Pour un fold donnÃ©, crÃ©e le testing set et training set en fonction de fold_label  
+ 
 def train_test_indices(fold_label, nb_fold):
-    
+    """Pour un fold donne, cree le testing set et training
+    set en fonction de fold_label """
     indices_train = np.where(fold_label != nb_fold)[0]
     indices_test = np.where(fold_label == nb_fold)[0]
-    
     return(indices_train, indices_test)
 
 
