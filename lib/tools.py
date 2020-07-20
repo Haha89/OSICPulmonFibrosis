@@ -141,9 +141,6 @@ def preprocessing_data(data):
     for col in ["Weeks", "FVC", "Age"]:
         data[col] = (data[col] - data[col].min())/(data[col].max() - data[col].min())
     data["Percent"] = data["Percent"]/100.
-    # Transformation pour etre des lois normales TODO and TRY
-    # from sklearn.preprocessing import PowerTransformer
-    # yj = PowerTransformer(method='yeo-johnson')
     return data
 
 def filter_data(data, id_patient=None, indice=None):
@@ -168,5 +165,4 @@ def get_data(path):
     raw_data = pd.read_csv(path + 'train.csv')
     #mini, maxi = unormalize_fvc(raw_data)
     #np.save("minmax",np.array([mini,maxi]))
-    normalized = preprocessing_data(raw_data)
-    return(normalized)
+    return (preprocessing_data(raw_data))

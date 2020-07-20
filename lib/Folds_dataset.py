@@ -46,7 +46,7 @@ def make_folds(path, nb_folds):
     fold_label = np.zeros(batch_size, dtype=int)    
     items_per_fold = batch_size//nb_folds
     for fold in range(nb_folds-1):
-        sample = random.sample(subfolders,items_per_fold)
+        sample = random.sample(subfolders, items_per_fold)
         #On les assigne au label considÃ©rÃ©     
         for smpl in sample :
             fold_label[smpl] = fold + 1
