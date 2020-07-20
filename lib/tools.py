@@ -81,18 +81,18 @@ def get_data_patient(id_patient=None, indice=None):
                          int(starty):int(starty+SCAN_SIZE[2]//fy)]
     resized_mat = zoom(resized_mat, (fz, fx, fy))
         
-    # #Add padding based on size
-    z,x,y = resized_mat.shape
+    #Add padding based on size
+    z, x, y = resized_mat.shape
     z1 = (SCAN_SIZE[0] - z)//2
     z2 = (SCAN_SIZE[0]- z + 1)//2
     y1 = (SCAN_SIZE[2] - y)//2
     y2 = (SCAN_SIZE[2] - y + 1)//2
     x1 = (SCAN_SIZE[1] - x)//2
     x2 = (SCAN_SIZE[1] - x + 1)//2
-    
+
     processed_mat=np.pad(resized_mat, ((z1, z2), (x1, x2), (y1, y2)), 'constant') #Always size SCAN_SIZE    
     min_matrix = np.min(processed_mat) #Normalization
-    return (processed_mat-min_matrix)/(np.max(processed_mat)-min_matrix)
+    return (processed_mat - min_matrix)/(np.max(processed_mat) - min_matrix)
     
 
 def multi_slice_viewer(matrix_3d):
