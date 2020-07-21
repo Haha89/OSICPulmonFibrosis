@@ -1,10 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Sat Jul 18 21:16:31 2020
-
-@author: Benjamin
-"""
-
 
 import numpy as np
 import torch
@@ -41,18 +35,18 @@ fold_labels = np.load("4-folds-split.npy")
 for k in range(nb_folds):  
     indices_train, indices_test = train_test_indices(fold_labels,k)
     learning_rate = 0.001
-    model = Convolutionnal_Network(1,10,(128,128,128),16,64,4,64)   
+    model = Convolutionnal_Network(1, 10, (128,128,128),16,64,4,64)   
     model.to(device)
     optimiser = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay = 5e-5)
-    
+
     #####################
     # Train model
     #####################
     num_epochs = 100
-    
+
     training_set = Dataset(path, indices_train)
     training_generator = data.DataLoader(training_set, batch_size = 4, shuffle = True,num_workers=0)
-    
+
     testing_set = Dataset(path, indices_test)
     testing_generator = data.DataLoader(testing_set, batch_size = 1, shuffle = False,num_workers=0)
 
@@ -60,7 +54,7 @@ for k in range(nb_folds):
 
     for t in range(num_epochs):
         start_time = time.time()
-        
+
         loss_training = 0
         loss_testing = 0
         
@@ -105,6 +99,7 @@ for k in range(nb_folds):
                 
                 loss = laplace_log_likelihood(goal,mean,std)
                 loss_testing += loss
+
         loss_training = loss_training/len(training_generator)    
         loss_testing =  loss_testing/len(testing_generator)
         print(t,loss_training,loss_testing, time.strftime("%H:%M:%S",time.gmtime(time.time()-start_time)))

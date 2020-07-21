@@ -72,12 +72,3 @@ def train_test_indices(fold_label, nb_fold):
 folds = make_folds(path,4)
 np.save("4-folds-split",folds)
 """
-
-
-
-
-
-
-
-
-
