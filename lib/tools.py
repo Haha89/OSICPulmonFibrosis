@@ -36,6 +36,27 @@ def get_scans_from_id(id):
     if path_folder:
         return sorted(listdir(path_folder), key=lambda f : int(f.split(".")[0]))
 
+def crop_slice(s):
+
+    """
+    Crop frames from slices
+
+    Parameters
+    ----------
+    s : numpy array, shape = (Rows, Columns)
+    numpy array of slices with frame
+
+    Returns
+    -------
+    s_cropped : numpy array, shape = (Rows - All Zero Rows, Columns - All Zero Columns)
+    numpy array after the all zero rows and columns are dropped
+    """
+
+    s_cropped = s[~np.all(s == 0, axis=1)]
+    s_cropped = s_cropped[:, ~np.all(s_cropped == 0, axis=0)]
+    return s_cropped
+
+
 def multi_slice_viewer(matrix_3d):
     """Visualization of the matrix slice by slice.
     Allegrement Stolen online"""

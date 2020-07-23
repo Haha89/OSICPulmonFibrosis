@@ -6,7 +6,7 @@ and saves it in the folder ../data/scans/
 
 from os import listdir
 import numpy as np
-from tools import get_path_id, get_scans_from_id, get_id_folders
+from tools import get_path_id, get_scans_from_id, get_id_folders, crop_slice
 import pydicom
 from scipy.ndimage import zoom
 
@@ -25,12 +25,12 @@ def get_3d_scan(id):
     
     for file in filelist:
         data = pydicom.dcmread(f"{path_data}/{file}")
-        slice_agg.append(data.pixel_array)
+        slice_agg.append(crop_slice(data.pixel_array))
         spacing = data.PixelSpacing
         thickness = float(data.SliceThickness)
     return np.array(slice_agg), spacing, thickness
     
-    
+
 def get_data_patient(id_patient=None, indice=None):
     """Returns the 3d scan array of a patient,
     as a 128*128*128 array, values between 0 and 1"""
