@@ -16,7 +16,7 @@ THICKNESS = 1
 SCAN_SIZE = [128, 128, 128] #z, x, y
 
 
-def get_3d_scan(id):
+def create_3d_scan(id):
     """Return a 3d matrix of the different slices (ct scans) of a patient, 
     the list of slice heights and widths"""
     path_data = get_path_id(id)
@@ -31,13 +31,13 @@ def get_3d_scan(id):
     return np.array(slice_agg), spacing, thickness
     
 
-def get_data_patient(id_patient=None, indice=None):
+def process_3d_scan(id_patient=None, indice=None):
     """Returns the 3d scan array of a patient,
     as a 128*128*128 array, values between 0 and 1"""
     
     if id_patient is None:
         id_patient = get_id_folders(indice)
-    matrix, spacing, thickness = get_3d_scan(id_patient) 
+    matrix, spacing, thickness = create_3d_scan(id_patient) 
     nb_slice, nb_row, nb_col = np.shape(matrix)
     
     #Resizing factors
@@ -73,7 +73,7 @@ def get_data_patient(id_patient=None, indice=None):
 for i, id in enumerate(listdir(PATH_DATA + "../data/train/")):
     try:
         with open(f'{PATH_DATA}scans/{id}.npy', 'wb') as f:
-            np.save(f, get_data_patient(id_patient=id))
+            np.save(f, process_3d_scan(id_patient=id))
         if i%17 == 0:
             print(f"{i/1.7}% done")
     except:

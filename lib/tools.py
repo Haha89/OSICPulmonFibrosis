@@ -88,7 +88,10 @@ def get_random_scan():
     except:
         print(f"Error during the random scan for {random_id}, file {random_scan}")
     
+def get_3d_scan(id):
+    return np.load(f"{PATH_DATA}scans/{id}.npy")
     
+
 def get_specific_scan(id, scan_number):
     """Returns the data of a specific patient, specific scan"""
     return pydicom.dcmread(f"{get_path_id(id)}/{scan_number}.dcm")

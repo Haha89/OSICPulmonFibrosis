@@ -10,8 +10,7 @@ import os
 import torch
 import random
 from torch.utils import data
-import time
-from tools import * 
+from tools import get_data, filter_data, get_3d_scan
 
 path = 'C:/Users/Benjamin/Desktop/Kaggle/osic-pulmonary-fibrosis-progression/'
 
@@ -30,7 +29,7 @@ class Dataset(data.Dataset):
   def __getitem__(self, index):
         'Generates one sample of data'
         # Select sample
-        scan = get_data_patient(self.list_of_ids[index])
+        scan = get_3d_scan(self.list_of_ids[index])
         misc, FVC, percent = filter_data(self.data, self.list_of_ids[index])
         scan = torch.tensor(scan).unsqueeze(0)
         return (scan.float(), misc.float(), FVC.float(), percent.float())
