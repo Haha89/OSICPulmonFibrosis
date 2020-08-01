@@ -69,13 +69,11 @@ def process_3d_scan(id_patient=None, indice=None):
     min_matrix = np.min(processed_mat) #Normalization
     return (processed_mat - min_matrix)/(np.max(processed_mat) - min_matrix)    
 
-
-for i, id in enumerate(listdir(PATH_DATA + "../data/train/")):
+folders = listdir(PATH_DATA + "../data/train/")
+for i, id in enumerate(folders):
     try:
         with open(f'{PATH_DATA}scans/{id}.npy', 'wb') as f:
             np.save(f, process_3d_scan(id_patient=id))
-        if i%17 == 0:
-            print(f"{i/1.7}% done")
     except:
         print(id)
         
