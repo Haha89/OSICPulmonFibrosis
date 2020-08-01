@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
 
+"""Set of many functions used throughout the different scripts"""
+
 from os import listdir, path, scandir
+from random import choice, sample
+from math import sqrt
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
 import pydicom
-from random import choice, sample
 import pandas as pd
-from math import sqrt
+
 
 PATH_DATA = "../data/"
 PIXEL_SPACING = 0.8
@@ -15,6 +18,7 @@ THICKNESS = 1
 SCAN_SIZE = [128, 128, 128] #z, x, y
 
 def get_id_folders(indice):
+    """Retunds the ID of the patient for a specific index"""
     try:
         return listdir(PATH_DATA + "train/")[indice]
     except:
@@ -22,20 +26,22 @@ def get_id_folders(indice):
         return listdir(PATH_DATA + "train/")[0]
 
 
-def get_path_id(id):
+def get_path_id(id_patient):
     """Returns the path of the folder containing the patient ID CT scans.
     Notifies if the path is not found"""
-    path_folder = f"{PATH_DATA}train/{id}"
+    path_folder = f"{PATH_DATA}train/{id_patient}"
     if path.isdir(path_folder):
         return path_folder
-    print(f"Could not find the folder for patient: {id}")
+    print(f"Could not find the folder for patient: {id_patient}")
+    return None
 
-    
-def get_scans_from_id(id):
-    """Returns an ordered list of CT scans filenames from the client id"""
-    path_folder = get_path_id(id)
+
+def get_scans_from_id(id_patient):
+    """Returns an ordered list of CT scans filenames from the id_patient"""
+    path_folder = get_path_id(id_patient)
     if path_folder:
-        return sorted(listdir(path_folder), key=lambda f : int(f.split(".")[0]))
+        return sorted(listdir(path_folder), key=lambda f: int(f.split(".")[0]))
+    return []
 
 
 def crop_slice(s):
@@ -48,7 +54,7 @@ def crop_slice(s):
 def multi_slice_viewer(matrix_3d):
     """Visualization of the matrix slice by slice.
     Allegrement Stolen online"""
-    
+
     def process_key(event):
         fig = event.canvas.figure
         ax = fig.axes[0]
@@ -56,7 +62,7 @@ def multi_slice_viewer(matrix_3d):
         ax.index = (ax.index - 1) % volume.shape[0]
         ax.images[0].set_array(volume[ax.index])
         fig.canvas.draw()
-    
+
     fig, ax = plt.subplots()
     ax.volume = matrix_3d
     ax.index = matrix_3d.shape[0] // 2
@@ -67,7 +73,7 @@ def multi_slice_viewer(matrix_3d):
 
 def get_random_scan():
     """Returns a random scan contained in the train data set"""
-    subfolders = [ f.name for f in scandir(PATH_DATA + "train") if f.is_dir()]
+    subfolders = [f.name for f in scandir(PATH_DATA + "train") if f.is_dir()]
     random_id = choice(subfolders) #Random element from list of id
     random_scan = choice(get_scans_from_id(random_id)) #Random scan in the folder
     try:
@@ -77,18 +83,19 @@ def get_random_scan():
         print(f"Error during the random scan for {random_id}, file {random_scan}")
 
 
-def get_3d_scan(id):
-    return np.load(f"{PATH_DATA}scans/{id}.npy")
-    
+def get_3d_scan(id_patient):
+    """Loads and returns the 3d array of id_patient"""
+    return np.load(f"{PATH_DATA}scans/{id_patient}.npy")
+
 
 def unormalize_fvc(data):
-    return(data["FVC"].min(),data["FVC"].max())
+    """Returns the min and max FVC from dataset"""
+    return(data["FVC"].min(), data["FVC"].max())
 
 
 def preprocessing_data(data):
-    #Creation of one hot encoder, normalisation between [0,1]
+    """Preprocessing of the csv file, add one hot encoder and normalization between [0,1]"""
     data = pd.get_dummies(data, columns=['Sex', 'SmokingStatus'])
-    # Transform Weeks, FVC, Percent, Age to be in [0, 1]
     for col in ["Weeks", "FVC", "Age"]:
         data[col] = (data[col] - data[col].min())/(data[col].max() - data[col].min())
     data["Percent"] = data["Percent"]/100.
@@ -96,34 +103,35 @@ def preprocessing_data(data):
 
 
 def filter_data(data, id_patient=None, indice=None):
+    """Returns the data only for the id_patient"""
     if id_patient is None:
         id_patient = get_id_folders(indice)
-    """Returns the data only for the id_patient"""
     filtered_data = data[data.Patient == id_patient]
     fvc = torch.tensor(filtered_data.FVC.values)
     percent = torch.tensor(filtered_data.Percent.values)
 
     misc = torch.zeros((len(fvc), 4))
-    misc[:,0] = torch.tensor(filtered_data.Weeks.values)
-    misc[:,1] = torch.tensor(filtered_data.Age.values)
-    misc[:,2] = torch.tensor(filtered_data.Sex_Male.values)
-    misc[:,3] = torch.tensor(0.5*np.array(filtered_data['SmokingStatus_Currently smokes']) +\
+    misc[:, 0] = torch.tensor(filtered_data.Weeks.values)
+    misc[:, 1] = torch.tensor(filtered_data.Age.values)
+    misc[:, 2] = torch.tensor(filtered_data.Sex_Male.values)
+    misc[:, 3] = torch.tensor(0.5*np.array(filtered_data['SmokingStatus_Currently smokes']) +\
         np.array(filtered_data['SmokingStatus_Ex-smoker']))
-
     return misc, fvc, percent
 
 
-def get_data(path): 
-    raw_data = pd.read_csv(path + 'train.csv')
+def get_data():
+    """Returns the content proprocessed on the train.csv file (containing patient data)"""
+    raw_data = pd.read_csv(PATH_DATA + 'train.csv')
     #mini, maxi = unormalize_fvc(raw_data)
     #np.save("minmax",np.array([mini,maxi]))
-    return (preprocessing_data(raw_data))
+    return preprocessing_data(raw_data)
 
-def make_folds(path, nb_folds):
+
+def make_folds(nb_folds):
     """Fonction qui permet de labeliser nos entrees de 0 a
     nb_folds pour k-fold cross validation """
 
-    batch_size = len(listdir(path + 'train/'))
+    batch_size = len(listdir(PATH_DATA + 'train/'))
     subfolders = [i for i in range(batch_size)]
     #Chaque donnÃ©e Ã  un label
     fold_label = np.zeros(batch_size, dtype=int)

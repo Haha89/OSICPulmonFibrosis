@@ -1,107 +1,91 @@
 # -*- coding: utf-8 -*-
 
+"""Script to train """
+
+import time
 import numpy as np
 import torch
-import torch.nn as nn
-import torch.nn.init as init
 import torch.optim as optim
-from torchvision import transforms
-from torch.autograd import Variable
 from torch.utils import data
-import torch.nn.functional as F
-from Folds_dataset import *
-import time
-from conv3dNetwork import *
-from metrique import laplace_log_likelihood
+from conv3dNetwork import Convolutionnal_Network
+import tools
+from dataset import Dataset
 
-device = ("0" if torch.cuda.is_available() else "cpu" )
-
+DEVICE = ("0" if torch.cuda.is_available() else "cpu")
 """
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICE"] = "0"
 """
 
-path= 'C:/Users/Benjamin/Desktop/Kaggle/osic-pulmonary-fibrosis-progression/'
-#path= "E:/DataScience/Kaggle Challenges/osic-pulmonary-fibrosis-progression/"
+PATH_DATA = '../data/'
+NB_FOLDS = 1
+LEARNING_RATE = 0.001
+NUM_EPOCHS = 100
 
+(MINI, MAXI) = np.load("minmax.npy")
+FOLD_LABELS = np.load("4-folds-split.npy")
 
-extremums = np.load("minmax.npy")
-mini = extremums[0]
-maxi = extremums[1]
-   
-nb_folds = 1
-fold_labels = np.load("4-folds-split.npy")
-
-for k in range(nb_folds):  
-    indices_train, indices_test = train_test_indices(fold_labels,k)
-    learning_rate = 0.001
-    model = Convolutionnal_Network(1, 10, (128,128,128),16,64,4,64)   
-    model.to(device)
-    optimiser = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay = 5e-5)
+for k in range(NB_FOLDS):
+    indices_train, indices_test = tools.train_test_indices(FOLD_LABELS, k)
+    model = Convolutionnal_Network(1, 10, (128, 128, 128), 16, 64, 4, 64)
+    model.to(DEVICE)
+    optimiser = optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=5e-5)
 
     #####################
     # Train model
     #####################
-    num_epochs = 100
 
-    training_set = Dataset(path, indices_train)
-    training_generator = data.DataLoader(training_set, batch_size = 4, shuffle = True,num_workers=0)
+    training_set = Dataset(PATH_DATA, indices_train)
+    training_generator = data.DataLoader(training_set, batch_size=4, shuffle=True)
 
-    testing_set = Dataset(path, indices_test)
-    testing_generator = data.DataLoader(testing_set, batch_size = 1, shuffle = False,num_workers=0)
+    testing_set = Dataset(PATH_DATA, indices_test)
+    testing_generator = data.DataLoader(testing_set, batch_size=1, shuffle=False)
 
-    histo = torch.zeros((num_epochs,2))
+    histo = torch.zeros((NUM_EPOCHS, 2))
 
-    for t in range(num_epochs):
+    for epoch in range(NUM_EPOCHS):
         start_time = time.time()
-
-        loss_training = 0
-        loss_testing = 0
-        
+        loss_train, loss_test = 0, 0
         model.train()
-        for scans, misc, FVC, percent in training_generator: 
-        # Clear stored gradient
-            scans = scans.to(device)
-            misc = misc.to(device)
-            FVC = FVC.to(device)
-            percent = percent.to(device)
-            
+
+        for scans, misc, FVC, percent in training_generator:
+
+            scans, misc = scans.to(DEVICE), misc.to(DEVICE)
+            FVC, percent = FVC.to(DEVICE), percent.to(DEVICE)
+
+            # Clear stored gradient
             optimiser.zero_grad()
             pred = model(scans, misc, FVC, percent)
-            
-            mean = pred[:,:-1,0]*(maxi-mini) + mini
-            std = pred[:,:-1,1]*(maxi-mini) + mini
-            
-            goal = FVC[1:]*(maxi-mini) + mini
-            
-            loss = laplace_log_likelihood(goal,mean,std)
-            loss_training += loss
-            # Backward pass
-            loss.backward()
-            # Update parameters
-            optimiser.step()
 
+            #Deprocessing
+            mean = pred[:, :-1, 0]*(MAXI-MINI) + MINI
+            std = pred[:, :-1, 1]*(MAXI-MINI) + MINI
+            goal = FVC[1:]*(MAXI-MINI) + MINI
+
+            loss = tools.laplace_log_likelihood(goal, mean, std)
+            loss_train += loss
+
+            loss.backward() # Gradient Computation
+            optimiser.step() # Update parameters
+
+        #Validation
         with torch.no_grad():
             model.eval()
-            for scans, misc, FVC, percent in testing_generator: 
-        # Clear stored gradient
-                scans = scans.to(device)
-                misc = misc.to(device)
-                FVC = FVC.to(device)
-                percent = percent.to(device)
-
+            for scans, misc, FVC, percent in testing_generator:
+                scans, misc = scans.to(DEVICE), misc.to(DEVICE)
+                FVC, percent = FVC.to(DEVICE), percent.to(DEVICE)
                 pred = model(scans, misc, FVC, percent)
-                
-                mean = pred[:,:-1,0]*(maxi-mini) + mini
-                std = pred[:,:-1,1]*(maxi-mini) + mini
-                
-                goal = FVC[1:]*(maxi-mini) + mini
-                
-                loss = laplace_log_likelihood(goal,mean,std)
-                loss_testing += loss
 
-        loss_training = loss_training/len(training_generator)    
-        loss_testing =  loss_testing/len(testing_generator)
-        print(t,loss_training,loss_testing, time.strftime("%H:%M:%S",time.gmtime(time.time()-start_time)))
-        histo[t,0] = loss_training
-        histo[t,1] = loss_testing
+                mean = pred[:, :-1, 0]*(MAXI-MINI) + MINI
+                std = pred[:, :-1, 1]*(MAXI-MINI) + MINI
+                goal = FVC[1:]*(MAXI-MINI) + MINI
+
+                loss = tools.laplace_log_likelihood(goal, mean, std)
+                loss_test += loss
+
+        loss_train = loss_train/len(training_generator)
+        loss_test = loss_test/len(testing_generator)
+        print(f'| Epoch: {epoch+1} | Train Loss: {loss_train:.3f} | Test. Loss: {loss_test:.3f} |')
+        histo[epoch, 0] = loss_train
+        histo[epoch, 1] = loss_test
+    torch.save(histo, f"../data/histo-fold/histo-fold-{k}.pt")
