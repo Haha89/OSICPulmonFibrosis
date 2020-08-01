@@ -2,19 +2,17 @@
 
 """Preprocessing of the Train dataset, display of content of one patient"""
 
-import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import tools
 
 PATH_DATA = "../data/"
 
-train = pd.read_csv(PATH_DATA + 'train.csv')
-preproc = tools.preprocessing_data(train)
+TRAIN = pd.read_csv(PATH_DATA + 'train.csv')
+PREPROC = tools.preprocessing_data(TRAIN)
 
-id = "ID00026637202179561894768"
-other, fvc, percent = tools.filter_data(preproc, id)
+ID_PATIENT = "ID00026637202179561894768"
+OTHER, FVC, PERCENT = tools.filter_data(PREPROC, ID_PATIENT)
 
-print(fvc)
-print(other)
-print(percent)
+print(FVC)
+print(OTHER)
+print(PERCENT)

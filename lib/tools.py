@@ -81,11 +81,6 @@ def get_3d_scan(id):
     return np.load(f"{PATH_DATA}scans/{id}.npy")
     
 
-def get_specific_scan(id, scan_number):
-    """Returns the data of a specific patient, specific scan"""
-    return pydicom.dcmread(f"{get_path_id(id)}/{scan_number}.dcm")
-
-
 def unormalize_fvc(data):
     return(data["FVC"].min(),data["FVC"].max())
 
