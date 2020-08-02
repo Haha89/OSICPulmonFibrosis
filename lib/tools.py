@@ -2,8 +2,8 @@
 
 """Set of many functions used throughout the different scripts"""
 
-from os import listdir, path, scandir
-from random import choice, sample
+from os import listdir, path
+from random import sample
 from math import sqrt
 import torch
 import numpy as np
@@ -71,21 +71,9 @@ def multi_slice_viewer(matrix_3d):
     plt.show()
 
 
-def get_random_scan():
-    """Returns a random scan contained in the train data set"""
-    subfolders = [f.name for f in scandir(PATH_DATA + "train") if f.is_dir()]
-    random_id = choice(subfolders) #Random element from list of id
-    random_scan = choice(get_scans_from_id(random_id)) #Random scan in the folder
-    try:
-        print(f"Random scan for {random_id}, file {random_scan}")
-        return pydicom.dcmread(f"{get_path_id(random_id)}/{random_scan}")
-    except:
-        print(f"Error during the random scan for {random_id}, file {random_scan}")
-
-
 def get_3d_scan(id_patient):
     """Loads and returns the 3d array of id_patient"""
-    return np.load(f"{PATH_DATA}scans/{id_patient}.npy")
+    return np.load(f"{PATH_DATA}scans/{id_patient}.npy", allow_pickle=True)
 
 
 def unormalize_fvc(data):
@@ -96,7 +84,7 @@ def unormalize_fvc(data):
 def preprocessing_data(data):
     """Preprocessing of the csv file, add one hot encoder and normalization between [0,1]"""
     data = pd.get_dummies(data, columns=['Sex', 'SmokingStatus'])
-    for col in ["Weeks", "FVC", "Age"]:
+    for col in ["FVC", "Age"]:
         data[col] = (data[col] - data[col].min())/(data[col].max() - data[col].min())
     data["Percent"] = data["Percent"]/100.
     return data
@@ -107,16 +95,25 @@ def filter_data(data, id_patient=None, indice=None):
     if id_patient is None:
         id_patient = get_id_folders(indice)
     filtered_data = data[data.Patient == id_patient]
-    fvc = torch.tensor(filtered_data.FVC.values)
-    percent = torch.tensor(filtered_data.Percent.values)
-
-    misc = torch.zeros((len(fvc), 4))
-    misc[:, 0] = torch.tensor(filtered_data.Weeks.values)
-    misc[:, 1] = torch.tensor(filtered_data.Age.values)
-    misc[:, 2] = torch.tensor(filtered_data.Sex_Male.values)
-    misc[:, 3] = torch.tensor(0.5*np.array(filtered_data['SmokingStatus_Currently smokes']) +\
-        np.array(filtered_data['SmokingStatus_Ex-smoker']))
-    return misc, fvc, percent
+    
+    week_val = filtered_data.Weeks.values
+    
+    fvc = torch.zeros((140))
+    percent = torch.zeros((140))
+    weeks = torch.zeros((140))
+    
+    misc = torch.zeros((140, 3))
+    
+    minweek, maxweek = np.min(week_val)+5,  np.max(week_val)+5
+    for i, week in enumerate(week_val):
+        fvc[week+5] = filtered_data.FVC.values[i]
+        percent[week+5] = filtered_data.Percent.values[i]
+    weeks[minweek:maxweek] = torch.arange(minweek,maxweek)
+    misc[minweek:maxweek, 0] = torch.tensor(filtered_data.Age.values)[0]
+    misc[minweek:maxweek, 1] = torch.tensor(filtered_data.Sex_Male.values)[0]
+    misc[minweek:maxweek, 2] = torch.tensor(0.5*np.array(filtered_data['SmokingStatus_Currently smokes']) +\
+        np.array(filtered_data['SmokingStatus_Ex-smoker']))[0]
+    return misc, fvc, percent, weeks
 
 
 def get_data():
@@ -155,18 +152,22 @@ def make_folds(nb_folds):
 def train_test_indices(fold_label, nb_fold):
     """Pour un fold donne, cree le testing set et training
     set en fonction de fold_label """
-    indices_train = np.where(fold_label != nb_fold)[0]
-    indices_test = np.where(fold_label == nb_fold)[0]
+    indices_train_1 = np.where((fold_label != nb_fold))[0]
+    indices_train = np.array([x for x in indices_train_1 if fold_label[x] <5])
+    
+    indices_test_1 = np.where((fold_label == nb_fold))[0]
+    indices_test = np.array([x for x in indices_test_1 if fold_label[x] <5])
     return (indices_train, indices_test)
 
 
-def laplace_log_likelihood(actual_fvc, predicted_fvc, confidence):
+def laplace_log_likelihood(actual_fvc, predicted_fvc, confidence, mask):
     """
     Calculates the modified Laplace Log Likelihood score for this competition.
     """
-    std_min = torch.tensor([70]).cuda()
-    delta_max = torch.tensor([1000]).cuda()
+    std_min = torch.tensor([70.]).cuda()
+    delta_max = torch.tensor([1000.]).cuda()
     std_clipped = torch.max(confidence, std_min)
     delta = torch.min(torch.abs(actual_fvc - predicted_fvc), delta_max)
-    metric = - sqrt(2) * delta / std_clipped - torch.log(sqrt(2) * std_clipped)
-    return torch.mean(metric) #Y avait un - devant, je l'ai viré
+    metric = (- sqrt(2) * delta / std_clipped - torch.log(sqrt(2) * std_clipped))*mask
+    metric = metric.sum()/mask.sum()
+    return -metric #Y avait un - devant, je l'ai viré

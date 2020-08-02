@@ -101,12 +101,12 @@ class Convolutionnal_Network(nn.Module):
 
         self.out = nn.Linear(self.hidden_dim_linear, self.output_dim)
 
-        self.data_process1 = nn.Linear(self.output_dim + self.misc_dim,
+        self.data_process1 = nn.Linear(self.output_dim + self.misc_dim + 2,
                                        self.hidden_dim_linear)
         self.data_process2 = nn.Linear(self.hidden_dim_linear,
                                        self.output_dim)
 
-        self.evolution_process1 = nn.Linear(self.output_dim + 2,
+        self.evolution_process1 = nn.Linear(self.output_dim +1,
                                             self.hidden_dim_linear)
         self.evolution_process2 = nn.Linear(self.hidden_dim_linear,
                                             self.output_dim)
@@ -120,7 +120,7 @@ class Convolutionnal_Network(nn.Module):
         self.postprocess2 = nn.Linear(self.hidden_dim_linear, 2)
 
 
-    def forward(self, scans, misc, fvc, percent):
+    def forward(self, scans, misc, fvc, percent, weeks):
         """Forward function"""
         # batch_size, channels, depth, width, height = scans.shape
 
@@ -161,18 +161,26 @@ class Convolutionnal_Network(nn.Module):
 
         outputs_scan = self.out(x)
 
-        leng = fvc.shape[-1]
+        leng = weeks.shape[-1]
+        
         scans_over_time = outputs_scan.unsqueeze(1)
         scans_over_time = scans_over_time.expand(batch_size, leng, self.output_dim)
+        
+        fvc_over_time = fvc.unsqueeze(1)
+        fvc_over_time = fvc_over_time.expand(batch_size, leng, 1)
 
-        evolution = torch.cat((scans_over_time, misc), -1)
+        percent_over_time = percent.unsqueeze(1)
+        percent_over_time = percent_over_time.expand(batch_size, leng, 1)
+
+        
+
+        evolution = torch.cat((scans_over_time, misc, fvc_over_time, percent_over_time), -1)
         evolution = F.relu(self.data_process1(evolution))
         evolution = F.relu(self.data_process2(evolution))
+        
+        weeks = weeks.view(batch_size, leng, 1)
 
-        fvc = fvc.view(batch_size, leng, 1)
-        percent = percent.view(batch_size, leng, 1)
-
-        evolution = torch.cat((evolution, fvc, percent), -1)
+        evolution = torch.cat((evolution, weeks), -1)
         evolution = F.relu(self.evolution_process1(evolution))
         evolution = F.relu(self.evolution_process2(evolution))
 
@@ -183,4 +191,5 @@ class Convolutionnal_Network(nn.Module):
 
         evolution = F.relu(self.postprocess1(evolution))
         output = self.postprocess2(evolution)
+        output[:,:,1] = torch.cumsum(output[:,:,1],-1)
         return output
