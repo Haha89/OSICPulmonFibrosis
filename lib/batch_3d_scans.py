@@ -13,7 +13,7 @@ from tools import get_path_id, get_scans_from_id, get_id_folders
 
 PATH_DATA = "../data/"
 PIXEL_SPACING = 0.8
-SPACING_Z = 1.5
+SPACING_Z = 3
 SCAN_SIZE = [128, 128, 128] #z, x, y
 
 
