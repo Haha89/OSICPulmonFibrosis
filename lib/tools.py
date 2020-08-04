@@ -86,6 +86,8 @@ def preprocessing_data(data):
     data = pd.get_dummies(data, columns=['Sex', 'SmokingStatus'])
     for col in ["FVC", "Age"]:
         data[col] = (data[col] - data[col].min())/(data[col].max() - data[col].min())
+    data["Week"] = (data["Week"] - data.Week.mean())/data.Week.std()
+    # data.Week /=  52.
     data["Percent"] = data["Percent"]/100.
     return data
 
@@ -101,13 +103,13 @@ def filter_data(data, id_patient=None, indice=None):
     fvc = torch.zeros((140))
     percent = torch.zeros((140))
     weeks = torch.zeros((140))
-    
     misc = torch.zeros((140, 3))
     
     minweek, maxweek = np.min(week_val)+5,  np.max(week_val)+5
     for i, week in enumerate(week_val):
         fvc[week+5] = filtered_data.FVC.values[i]
         percent[week+5] = filtered_data.Percent.values[i]
+        
     weeks[minweek:maxweek] = torch.arange(minweek,maxweek)
     misc[minweek:maxweek, 0] = torch.tensor(filtered_data.Age.values)[0]
     misc[minweek:maxweek, 1] = torch.tensor(filtered_data.Sex_Male.values)[0]
