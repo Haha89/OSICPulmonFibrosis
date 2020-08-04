@@ -30,7 +30,9 @@ def create_3d_scan(id):
             spacing = data.PixelSpacing
             y_pos.append(data.SliceLocation)
        
-        space_z = abs(float(y_pos[12])-float(y_pos[11]))
+        space_z = abs(float(y_pos[1])-float(y_pos[0]))
+        if space_z == 0:
+            space_z = 1
         return np.array(slice_agg), spacing, space_z
     except :
         
