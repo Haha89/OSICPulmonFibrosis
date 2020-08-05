@@ -19,7 +19,12 @@ SCAN_SIZE = [128, 128, 128] #z, x, y
 
 def create_3d_scan(id):
     """Return a 3d matrix of the different slices (ct scans) of a patient,
-    the list of slice heights and widths"""
+    the list of slice heights and widths. 
+    Heterogeneity in the dataset requires to return 
+     - the distance between SliceLocation when available;
+     - otherwise SpacingBetweenSlices,
+     - otherwise the SliceThickness"""
+    
     path_data = get_path_id(id)
     filelist = get_scans_from_id(id)
     slice_agg, spacing, y_pos = [], 0., []
@@ -31,9 +36,8 @@ def create_3d_scan(id):
             y_pos.append(data.SliceLocation)
        
         space_z = abs(float(y_pos[1])-float(y_pos[0]))
-        if space_z == 0:
-            space_z = 1
-        return np.array(slice_agg), spacing, space_z
+        return np.array(slice_agg), spacing, 1 if space_z == 0 else space_z
+    
     except :
         
         for file in filelist:

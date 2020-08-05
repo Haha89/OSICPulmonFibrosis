@@ -10,7 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pydicom
 import pandas as pd
-
+from pickle import dump, load
 
 PATH_DATA = "../data/"
 PIXEL_SPACING = 0.8
@@ -84,11 +84,18 @@ def unormalize_fvc(data):
 def preprocessing_data(data):
     """Preprocessing of the csv file, add one hot encoder and normalization between [0,1]"""
     data = pd.get_dummies(data, columns=['Sex', 'SmokingStatus'])
+    #Creation of dict containing min, max, mean, std of columns
+    dict_postpro = {}
+    
     for col in ["FVC", "Age"]:
+        dict_postpro[col] = {"min": data[col].min(), "max": data[col].max()}
         data[col] = (data[col] - data[col].min())/(data[col].max() - data[col].min())
-    data["Week"] = (data["Week"] - data.Week.mean())/data.Week.std()
-    # data.Week /=  52.
+    dict_postpro["Weeks"] = {"mean": data.Weeks.mean(), "std": data.Weeks.std()}   
+    data.Weeks = (data.Weeks - data.Weeks.mean())/data.Weeks.std()
     data["Percent"] = data["Percent"]/100.
+    
+    with open('minmax.pickle', 'wb') as file_save:
+        dump(dict_postpro, file_save) #, protocol=pickle.HIGHEST_PROTOCOL
     return data
 
 
@@ -96,8 +103,8 @@ def filter_data(data, id_patient=None, indice=None):
     """Returns the data only for the id_patient"""
     if id_patient is None:
         id_patient = get_id_folders(indice)
+        
     filtered_data = data[data.Patient == id_patient]
-    
     week_val = filtered_data.Weeks.values
     
     fvc = torch.zeros((140))
@@ -105,16 +112,35 @@ def filter_data(data, id_patient=None, indice=None):
     weeks = torch.zeros((140))
     misc = torch.zeros((140, 3))
     
-    minweek, maxweek = np.min(week_val)+5,  np.max(week_val)+5
-    for i, week in enumerate(week_val):
+    # minweek, maxweek = np.min(week_val)+5,  np.max(week_val)+5
+    
+    with open('minmax.pickle', 'rb') as minmax_file:
+        dict_extremum = load(minmax_file)
+        
+    MEAN_week, STD_week = dict_extremum['Weeks']["mean"], dict_extremum['Weeks']["std"]
+    postpro_weeks = (week_val * STD_week + MEAN_week).astype('int')
+    postpro_min, postpro_max = np.min(postpro_weeks) + 5, np.max(postpro_weeks) + 5
+    
+    
+    for i, week in enumerate(postpro_weeks):
         fvc[week+5] = filtered_data.FVC.values[i]
         percent[week+5] = filtered_data.Percent.values[i]
         
-    weeks[minweek:maxweek] = torch.arange(minweek,maxweek)
-    misc[minweek:maxweek, 0] = torch.tensor(filtered_data.Age.values)[0]
-    misc[minweek:maxweek, 1] = torch.tensor(filtered_data.Sex_Male.values)[0]
-    misc[minweek:maxweek, 2] = torch.tensor(0.5*np.array(filtered_data['SmokingStatus_Currently smokes']) +\
+    weeks[postpro_min:postpro_max] = torch.tensor(week_val)[0]
+    misc[postpro_min:postpro_max, 0] = torch.tensor(filtered_data.Age.values)[0]
+    misc[postpro_min:postpro_max, 1] = torch.tensor(filtered_data.Sex_Male.values)[0]
+    misc[postpro_min:postpro_max, 2] = torch.tensor(0.5*np.array(filtered_data['SmokingStatus_Currently smokes']) +\
         np.array(filtered_data['SmokingStatus_Ex-smoker']))[0]
+        
+    # for i, week in enumerate(week_val):
+    #     fvc[week+5] = filtered_data.FVC.values[i]
+    #     percent[week+5] = filtered_data.Percent.values[i]
+        
+    # weeks[minweek:maxweek] = torch.arange(minweek,maxweek)
+    # misc[minweek:maxweek, 0] = torch.tensor(filtered_data.Age.values)[0]
+    # misc[minweek:maxweek, 1] = torch.tensor(filtered_data.Sex_Male.values)[0]
+    # misc[minweek:maxweek, 2] = torch.tensor(0.5*np.array(filtered_data['SmokingStatus_Currently smokes']) +\
+    #     np.array(filtered_data['SmokingStatus_Ex-smoker']))[0]    
     return misc, fvc, percent, weeks
 
 
@@ -172,4 +198,4 @@ def laplace_log_likelihood(actual_fvc, predicted_fvc, confidence, mask):
     delta = torch.min(torch.abs(actual_fvc - predicted_fvc), delta_max)
     metric = (- sqrt(2) * delta / std_clipped - torch.log(sqrt(2) * std_clipped))*mask
     metric = metric.sum()/mask.sum()
-    return -metric #Y avait un - devant, je l'ai viré
+    return -metric

@@ -172,8 +172,6 @@ class Convolutionnal_Network(nn.Module):
         percent_over_time = percent.unsqueeze(1)
         percent_over_time = percent_over_time.expand(batch_size, leng, 1)
 
-        
-
         evolution = torch.cat((scans_over_time, misc, fvc_over_time, percent_over_time), -1)
         evolution = F.relu(self.data_process1(evolution))
         evolution = F.relu(self.data_process2(evolution))
@@ -191,5 +189,5 @@ class Convolutionnal_Network(nn.Module):
 
         evolution = F.relu(self.postprocess1(evolution))
         output = self.postprocess2(evolution)
-        output[:,:,1] = torch.cumsum(output[:,:,1],-1)
+        output[:,:,1] = torch.cumsum(torch.sigmoid(output[:,:,1]),-1)
         return output

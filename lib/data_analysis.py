@@ -11,7 +11,6 @@ import pandas_profiling as pdp
 import pydicom
 import tools
 
-
 PATH_DATA = "../data/"
 
 train = pd.read_csv(PATH_DATA + 'train.csv')
@@ -34,9 +33,9 @@ sns.pointplot(x='Weeks', y='FVC', data=df[df['Patient'] == id_target])
 plt.title(f"Evolution of FVC in time for {id_target}", size=16)
 plt.show()
 
-# =============================================================================
-# Analysis on ct-scans
-# =============================================================================
+# # =============================================================================
+# # Analysis on ct-scans
+# # =============================================================================
 
 subfolders = [f.name for f in scandir(PATH_DATA + "train") if f.is_dir()]
 nb_tranches, spacing = [], []
@@ -53,8 +52,7 @@ for id_patient in subfolders:
         nb_rows.append(data.Rows)
         nb_col.append(data.Columns)
         spacing.append(data.PixelSpacing)
-        # resized = tools.normalize_scan(data)
-        # resized_list.append(resized.shape)
+
 
 
 def CountFrequency(my_list):
@@ -73,18 +71,19 @@ def CountFrequency(my_list):
 # =============================================================================
 # Combien y'a t'il de tranches par scan ?
 # =============================================================================
-print("Details on number of slices")
-rep_tranches = CountFrequency(nb_tranches)
-print(rep_tranches)
-plt.figure(figsize=(20, 10))
-plt.bar(rep_tranches.keys(), height=rep_tranches.values())
-plt.title("Number of slices per Scan")
-plt.show()
+if __name__== "__main__":
+    print("Details on number of slices")
+    rep_tranches = CountFrequency(nb_tranches)
+    print(rep_tranches)
+    plt.figure(figsize=(20, 10))
+    plt.bar(rep_tranches.keys(), height=rep_tranches.values())
+    plt.title("Number of slices per Scan")
+    plt.show()
 
 
-# =============================================================================
-# Quels sont les differents formats de scan (taille matrice)
-# =============================================================================
+# # =============================================================================
+# # Quels sont les differents formats de scan (taille matrice)
+# # =============================================================================
 print("Details on number of rows")
 rep_rows = CountFrequency(nb_rows)
 print(rep_rows)
@@ -102,9 +101,9 @@ plt.bar(rep_col.keys(), height=rep_col.values())
 plt.title("Repartition of ct-scans widths")
 plt.show()
 
-# =============================================================================
-# Quels sont les pixel spacing
-# =============================================================================
+# # =============================================================================
+# # Quels sont les pixel spacing
+# # =============================================================================
 print("Details on spacings")
 
 freq = {}

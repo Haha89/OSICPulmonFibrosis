@@ -25,8 +25,8 @@ class Dataset(data.Dataset):
     def __getitem__(self, index):
         'Generates one sample of data'
         # Select sample
-        if self.list_of_ids[index] == 'ID00052637202186188008618' or self.list_of_ids[index] == "ID00105637202208831864134":
-            index = (index + 14)%len(self.indices)
+        # if self.list_of_ids[index] == 'ID00052637202186188008618' or self.list_of_ids[index] == "ID00105637202208831864134":
+        #     index = (index + 14)%len(self.indices)
         scan = get_3d_scan(self.list_of_ids[index])
         misc, fvc, percent,weeks = filter_data(self.data, self.list_of_ids[index])
         scan = torch.tensor(scan).unsqueeze(0)
