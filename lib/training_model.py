@@ -62,6 +62,48 @@ if __name__ == "__main__":
             start_time = time.time()
             loss_train, loss_test = 0, 0
             model.train()
+
+for k in range(NB_FOLDS):
+    indices_train, indices_test = tools.train_test_indices(FOLD_LABELS, k)
+    model = Convolutionnal_Network(1, 10, (256, 256, 40), 16, 64, 3, 64)
+    model.to(DEVICE)
+    optimiser = optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=5e-8)
+
+    #####################
+    # Train model
+    #####################
+
+    training_set = Dataset(PATH_DATA, indices_train)
+    training_generator = data.DataLoader(training_set, batch_size=1, shuffle=True)
+
+    testing_set = Dataset(PATH_DATA, indices_test)
+    testing_generator = data.DataLoader(testing_set, batch_size=1, shuffle=False)
+    histo = torch.zeros((NUM_EPOCHS, 2))
+    for epoch in range(NUM_EPOCHS):
+        start_time = time.time()
+        loss_train, loss_test = 0, 0
+        model.train()
+        for scans, misc, FVC, percent,weeks in training_generator:
+            
+            ranger = np.where(weeks != 0)[1]
+            misc = misc[:,ranger]
+            fvc = FVC[:,ranger[0]]
+            percent = percent[:,ranger[0]]
+            weeks = weeks[:,ranger]
+            scans, misc = scans.to(DEVICE), misc.to(DEVICE)
+            fvc, percent, weeks = fvc.to(DEVICE), percent.to(DEVICE), weeks.to(DEVICE)
+            # Clear stored gradient
+            optimiser.zero_grad()
+            pred = model(scans, misc, fvc, percent,weeks)
+            #Deprocessing
+            mean = pred[:, :-1, 0]*(MAXI-MINI) + MINI
+            std = pred[:, :-1, 1]*100
+            
+            goal = (FVC[:,ranger[1:]]*(MAXI-MINI) + MINI).to(DEVICE)
+            
+            mask = torch.zeros(len(ranger)-1).to(DEVICE)
+            mask[np.where(FVC != 0)[0][1:]] = 1
+            
             
             for scans, misc, FVC, percent,weeks in training_generator:
                 ranger = np.where(weeks != 0)[1]
