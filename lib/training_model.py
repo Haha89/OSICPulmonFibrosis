@@ -29,7 +29,7 @@ FOLD_LABELS = np.load("4-folds-split.npy")
 
 for k in range(NB_FOLDS):
     indices_train, indices_test = tools.train_test_indices(FOLD_LABELS, k)
-    model = Convolutionnal_Network(1, 10, (128, 128, 128), 16, 64, 3, 64)
+    model = Convolutionnal_Network(1, 10, (256, 256, 40), 16, 64, 3, 64)
     model.to(DEVICE)
     optimiser = optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=5e-8)
 
