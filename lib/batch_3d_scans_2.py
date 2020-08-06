@@ -9,10 +9,10 @@ import numpy as np
 
 import pydicom
 from scipy.ndimage import zoom
-from tools import get_path_id, get_scans_from_id
+from tools import get_path_id, get_scans_from_id, multi_slice_viewer
 import scipy.ndimage as ndimage
 from skimage import measure, morphology, segmentation
-
+from sklearn.cluster import KMeans
 PATH_DATA = "../data/"
 PIXEL_SPACING = 1
 SPACING_Z = 3
@@ -51,10 +51,14 @@ def create_3d_scan(id):
             return np.array(slice_agg), spacing, data.SliceThickness, data
 
 
-def rescale(sample, bounds=(-1000, 500)):
+def rescale(sample, bounds=(-1000, -200)):
     image, data = sample['image'], sample['metadata']
-    intercept = data.RescaleIntercept
+    if data.PatientID == "ID00132637202222178761324":
+        intercept = 2048
+    else:
+        intercept = data.RescaleIntercept
     slope = data.RescaleSlope
+
     image = (image * slope + intercept).astype(np.int16)
     image[image < min(bounds)] = min(bounds)
     image[image > max(bounds)] = max(bounds)
@@ -101,6 +105,14 @@ def analyse(sample, min_hu, iterations):
 
 
 def seperate_lungs(image, min_hu, iterations):
+    """
+    Segments lungs using various techniques.
+    
+    Parameters: image (Scan image), iterations (more iterations, more accurate mask)
+    
+    Returns: 
+        - Segmented Lung
+    """
     
     h, w = image.shape[0], image.shape[1]
     marker_internal, marker_external, marker_watershed = generate_markers(image)
@@ -132,7 +144,7 @@ def seperate_lungs(image, min_hu, iterations):
     return segmented
 
     
-def generate_markers(image, threshold=-400):
+def generate_markers(image, threshold=-700):
     h, w = image.shape[0], image.shape[1]
 
     marker_internal = image < threshold
@@ -161,14 +173,8 @@ def generate_markers(image, threshold=-400):
     marker_watershed += marker_external * 128
     return marker_internal, marker_external, marker_watershed    
 
-    
 
-def process_3d_scan(id_patient):
-    """Returns the 3d scan array of a patient,
-    as a 128*128*128 array, values between 0 and 1"""
-
-    matrix, spacing, space_z, metadata = create_3d_scan(id_patient)
-    
+def resize(matrix, spacing, space_z):
     #Resizing factors
     fx = spacing[0]/PIXEL_SPACING
     fy = spacing[1]/PIXEL_SPACING
@@ -185,6 +191,7 @@ def process_3d_scan(id_patient):
                          int(starty):int(starty+SCAN_SIZE[2]//fy)]
     resized_mat = zoom(resized_mat, (fz, fx, fy))
     
+    
     #Add padding based on size
     z, x, y = resized_mat.shape
     z1 = (SCAN_SIZE[0] - z)//2
@@ -195,28 +202,46 @@ def process_3d_scan(id_patient):
     x2 = (SCAN_SIZE[1] - x + 1)//2
 
     processed_mat = np.pad(resized_mat, ((z1, z2), (x1, x2), (y1, y2)), 'constant')
-    
-    sample = {'image': processed_mat, 'metadata': metadata} 
-    sample = crop(sample)
-    samble = rescale(sample, bounds=clip_bounds)
-    processed_mat = analyse(samble, min(clip_bounds), 1)['image']
-
-    min_matrix = np.min(processed_mat) #Normalization
-    processed_mat = (processed_mat - min_matrix)/(np.max(processed_mat) - min_matrix)
     return processed_mat
+
+
+def process_3d_scan(id_patient):
+    """Returns the 3d scan array of a patient,
+    as a 128*128*128 array, values between 0 and 1"""
+
+    matrix, spacing, space_z, metadata = create_3d_scan(id_patient)
+    sample = {'image': matrix, 'metadata': metadata} 
+    sample = crop(sample)
+    sample['image'] = resize(sample['image'], spacing, space_z)
+    sample_watershed = rescale(sample, bounds=clip_bounds)
+    processed_mat = analyse(sample_watershed, min(clip_bounds), 2)['image']
+    
+    if np.min(processed_mat) - np.max(processed_mat) == 0: #Empty mask, return not modyfied
+        min_matrix = np.min(sample['image']) #Normalization
+        sample['image'] = (sample['image'] - min_matrix)/(np.max(sample['image']) - min_matrix)
+        print("ZEROS")
+        return sample['image']
+    else:
+        min_matrix = np.min(processed_mat) #Normalization
+        processed_mat = (processed_mat - min_matrix)/(np.max(processed_mat) - min_matrix)
+        return processed_mat
 
 
 if __name__ == "__main__":  
     FOLDERS = listdir(PATH_DATA + "train/")
     for i, patient in enumerate(FOLDERS): #enumerate(["ID00128637202219474716089", "ID00132637202222178761324"]):
-    
         try:
+            data = process_3d_scan(id_patient=patient)
             with open(f'{PATH_DATA}scans/{patient}.npy', 'wb') as f:
                 np.save(f, process_3d_scan(id_patient=patient))
             print(f"Index {i} - Patient : {patient} - Done")  
         except:
             print(i, patient)
-        
+    
+#     from random import sample       
+#     for patient in sample(FOLDERS, 1):
+#         patient = "ID00132637202222178761324"
+#         data = process_3d_scan(id_patient=patient)
+#         multi_slice_viewer(data)
 
-   
-
+# patient_bug1 = "ID00229637202260254240583"

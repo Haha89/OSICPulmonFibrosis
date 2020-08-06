@@ -51,7 +51,7 @@ def crop_slice(s):
     return s_cropped
 
 
-def multi_slice_viewer(matrix_3d):
+def multi_slice_viewer(matrix_3d, title=None):
     """Visualization of the matrix slice by slice.
     Allegrement Stolen online"""
 
@@ -68,6 +68,7 @@ def multi_slice_viewer(matrix_3d):
     ax.index = matrix_3d.shape[0] // 2
     ax.imshow(matrix_3d[ax.index], cmap=plt.cm.bone)
     fig.canvas.mpl_connect('scroll_event', process_key)
+    if title: plt.title(title)
     plt.show()
 
 

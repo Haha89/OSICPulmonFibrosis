@@ -22,9 +22,9 @@ os.environ["CUDA_VISIBLE_DEVICE"] = "0"
 """
 
 PATH_DATA = '../data/'
-NB_FOLDS = 2
+NB_FOLDS = 1
 LEARNING_RATE = 0.0001
-NUM_EPOCHS = 1
+NUM_EPOCHS = 2
 
 
 if __name__ == "__main__":
@@ -45,7 +45,7 @@ if __name__ == "__main__":
     
     for k in range(NB_FOLDS):
         indices_train, indices_test = tools.train_test_indices(FOLD_LABELS, k)
-        model = Convolutionnal_Network(1, 10, (256, 256, 40), 16, 64, 3, 64)
+        model = Convolutionnal_Network(1, 10, (256, 256, 32), 16, 64, 3, 64)
         model.to(DEVICE)
         optimiser = optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=5e-8)
     
@@ -66,7 +66,7 @@ if __name__ == "__main__":
             model.train()
 
             #TRAINING    
-            for scans, misc, FVC, percent,weeks in training_generator:
+            for scans, misc, FVC, percent, weeks in training_generator:
                 ranger = np.where(weeks != 0)[1]
                 misc = misc[:,ranger]
                 fvc = FVC[:,ranger[0]]
@@ -79,9 +79,10 @@ if __name__ == "__main__":
                 pred = model(scans, misc, fvc, percent,weeks)
                 #Deprocessing
                 mean = unscale(pred[:, :-1, 0])
+                print(mean)
                 std = pred[:, :-1, 1]*100
-                goal = unscale(FVC[:,ranger[1:]]).to(DEVICE)
                 
+                goal = unscale(FVC[:,ranger[1:]]).to(DEVICE)
                 mask = torch.zeros(len(ranger)-1).to(DEVICE)
                 mask[np.where(FVC != 0)[0][1:]] = 1
                 
