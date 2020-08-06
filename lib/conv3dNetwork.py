@@ -97,6 +97,7 @@ class Convolutionnal_Network(nn.Module):
        # Post_processing
         input_dim_pp = self.input_dim*self.multiplicator*(16 + 8 + 4 + 2 + 1)*self.shape[0]*self.shape[1]*self.shape[2]//(16*16*16)
         self.postpross1 = nn.Linear(input_dim_pp, self.hidden_dim_linear*2)
+        
         self.postpross2 = nn.Linear(self.hidden_dim_linear*2, self.hidden_dim_linear)
 
         self.out = nn.Linear(self.hidden_dim_linear, self.output_dim)
@@ -150,10 +151,9 @@ class Convolutionnal_Network(nn.Module):
 
         x = F.relu(self.bn41(self.Conv41(x)))
         x = F.relu(self.bn42(self.Conv42(x)))
-        x = torch.cat((x, interm0, interm1, interm2, interm3), dim=1)
-
+        x = torch.cat((x, interm0, interm1, interm2, interm3), dim=1) #BUG LA JE CROIS
+        
         batch_size, nb_features, depth, width, height = x.shape
-
         x = x.view(batch_size, -1)
 
         x = F.relu(self.postpross1(x))

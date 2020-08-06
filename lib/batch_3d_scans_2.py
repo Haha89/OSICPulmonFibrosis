@@ -9,7 +9,7 @@ import numpy as np
 
 import pydicom
 from scipy.ndimage import zoom
-from tools import get_path_id, get_scans_from_id, multi_slice_viewer
+from tools import get_path_id, get_scans_from_id
 import scipy.ndimage as ndimage
 from skimage import measure, morphology, segmentation
 
@@ -206,15 +206,16 @@ def process_3d_scan(id_patient):
     return processed_mat
 
 
-FOLDERS = listdir(PATH_DATA + "train/")
-for i, patient in enumerate(FOLDERS): #enumerate(["ID00128637202219474716089", "ID00132637202222178761324"]):
-
-    try:
-        with open(f'{PATH_DATA}scans/{patient}.npy', 'wb') as f:
-            np.save(f, process_3d_scan(id_patient=patient))
-        print(f"Index {i} - Patient : {patient} - Done")  
-    except:
-        print(i, patient)
+if __name__ == "__main__":  
+    FOLDERS = listdir(PATH_DATA + "train/")
+    for i, patient in enumerate(FOLDERS): #enumerate(["ID00128637202219474716089", "ID00132637202222178761324"]):
+    
+        try:
+            with open(f'{PATH_DATA}scans/{patient}.npy', 'wb') as f:
+                np.save(f, process_3d_scan(id_patient=patient))
+            print(f"Index {i} - Patient : {patient} - Done")  
+        except:
+            print(i, patient)
         
 
    

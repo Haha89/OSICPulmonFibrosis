@@ -24,10 +24,12 @@ os.environ["CUDA_VISIBLE_DEVICE"] = "0"
 PATH_DATA = '../data/'
 NB_FOLDS = 2
 LEARNING_RATE = 0.0001
-NUM_EPOCHS = 15
+NUM_EPOCHS = 1
 
 
 if __name__ == "__main__":
+    
+    unscale = lambda x: x*(MAXI_FVC-MINI_FVC) + MINI_FVC
     
     for f in glob(f"{PATH_DATA}/histo-fold/histo-fold-*.pt"): #Removes existing histo-fold-X.pt
         remove(f)
@@ -35,20 +37,20 @@ if __name__ == "__main__":
     with open('minmax.pickle', 'rb') as minmax_file:
         dict_extremum = load(minmax_file)
         
-    MINI, MAXI = dict_extremum['FVC']["min"], dict_extremum['FVC']["max"]
-    MEAN_week, STD_week = dict_extremum['Weeks']["mean"], dict_extremum['Weeks']["std"]
-    
+    MINI_FVC = dict_extremum['FVC']["min"]
+    MAXI_FVC = dict_extremum['FVC']["max"]
+    MEAN_week = dict_extremum['Weeks']["mean"]
+    STD_week = dict_extremum['Weeks']["std"]
     FOLD_LABELS = np.load("4-folds-split.npy")
     
     for k in range(NB_FOLDS):
-        print(f"Starting K-fold {k}")
         indices_train, indices_test = tools.train_test_indices(FOLD_LABELS, k)
-        model = Convolutionnal_Network(1, 10, (128, 128, 128), 16, 64, 3, 64)
+        model = Convolutionnal_Network(1, 10, (256, 256, 40), 16, 64, 3, 64)
         model.to(DEVICE)
         optimiser = optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=5e-8)
     
         #####################
-        # Train model
+        # Loding of data
         #####################
     
         training_set = Dataset(PATH_DATA, indices_train)
@@ -56,55 +58,14 @@ if __name__ == "__main__":
     
         testing_set = Dataset(PATH_DATA, indices_test)
         testing_generator = data.DataLoader(testing_set, batch_size=1, shuffle=False)
-        histo = torch.zeros((NUM_EPOCHS, 2))
         
+        histo = torch.zeros((NUM_EPOCHS, 2))
         for epoch in range(NUM_EPOCHS):
             start_time = time.time()
             loss_train, loss_test = 0, 0
             model.train()
 
-for k in range(NB_FOLDS):
-    indices_train, indices_test = tools.train_test_indices(FOLD_LABELS, k)
-    model = Convolutionnal_Network(1, 10, (256, 256, 40), 16, 64, 3, 64)
-    model.to(DEVICE)
-    optimiser = optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=5e-8)
-
-    #####################
-    # Train model
-    #####################
-
-    training_set = Dataset(PATH_DATA, indices_train)
-    training_generator = data.DataLoader(training_set, batch_size=1, shuffle=True)
-
-    testing_set = Dataset(PATH_DATA, indices_test)
-    testing_generator = data.DataLoader(testing_set, batch_size=1, shuffle=False)
-    histo = torch.zeros((NUM_EPOCHS, 2))
-    for epoch in range(NUM_EPOCHS):
-        start_time = time.time()
-        loss_train, loss_test = 0, 0
-        model.train()
-        for scans, misc, FVC, percent,weeks in training_generator:
-            
-            ranger = np.where(weeks != 0)[1]
-            misc = misc[:,ranger]
-            fvc = FVC[:,ranger[0]]
-            percent = percent[:,ranger[0]]
-            weeks = weeks[:,ranger]
-            scans, misc = scans.to(DEVICE), misc.to(DEVICE)
-            fvc, percent, weeks = fvc.to(DEVICE), percent.to(DEVICE), weeks.to(DEVICE)
-            # Clear stored gradient
-            optimiser.zero_grad()
-            pred = model(scans, misc, fvc, percent,weeks)
-            #Deprocessing
-            mean = pred[:, :-1, 0]*(MAXI-MINI) + MINI
-            std = pred[:, :-1, 1]*100
-            
-            goal = (FVC[:,ranger[1:]]*(MAXI-MINI) + MINI).to(DEVICE)
-            
-            mask = torch.zeros(len(ranger)-1).to(DEVICE)
-            mask[np.where(FVC != 0)[0][1:]] = 1
-            
-            
+            #TRAINING    
             for scans, misc, FVC, percent,weeks in training_generator:
                 ranger = np.where(weeks != 0)[1]
                 misc = misc[:,ranger]
@@ -117,9 +78,9 @@ for k in range(NB_FOLDS):
                 optimiser.zero_grad()
                 pred = model(scans, misc, fvc, percent,weeks)
                 #Deprocessing
-                mean = pred[:, :-1, 0]*(MAXI-MINI) + MINI
+                mean = unscale(pred[:, :-1, 0])
                 std = pred[:, :-1, 1]*100
-                goal = (FVC[:,ranger[1:]]*(MAXI-MINI) + MINI).to(DEVICE)
+                goal = unscale(FVC[:,ranger[1:]]).to(DEVICE)
                 
                 mask = torch.zeros(len(ranger)-1).to(DEVICE)
                 mask[np.where(FVC != 0)[0][1:]] = 1
@@ -128,8 +89,8 @@ for k in range(NB_FOLDS):
                 loss_train += loss
                 loss.backward() # Gradient Computation
                 optimiser.step() # Update parameters
-              
-            #Validation
+                  
+            #VALIDATION
             with torch.no_grad():
                 model.eval()
                 for scans, misc, FVC, percent, weeks in testing_generator:
@@ -141,12 +102,11 @@ for k in range(NB_FOLDS):
                     scans, misc = scans.to(DEVICE), misc.to(DEVICE)
                     fvc, percent, weeks = fvc.to(DEVICE), percent.to(DEVICE), weeks.to(DEVICE)
                     pred = model(scans, misc, fvc, percent,weeks)
-                    #Deprocessing
-                    mean = pred[:, :-1, 0]*(MAXI-MINI) + MINI
-                    std = pred[:, :-1, 1]*100
                     
-                    goal = (FVC[:,ranger[1:]]*(MAXI-MINI) + MINI).to(DEVICE)
-                
+                    #Deprocessing
+                    mean = unscale(pred[:, :-1, 0])
+                    std = pred[:, :-1, 1]*100    
+                    goal = unscale(FVC[:,ranger[1:]]).to(DEVICE)
                     mask = torch.zeros(len(ranger)-1).to(DEVICE)
                     mask[np.where(FVC != 0)[0]] = 1
 
