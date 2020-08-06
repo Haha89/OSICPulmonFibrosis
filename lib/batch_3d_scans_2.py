@@ -16,7 +16,7 @@ from skimage import measure, morphology, segmentation
 PATH_DATA = "../data/"
 PIXEL_SPACING = 1
 SPACING_Z = 3
-SCAN_SIZE = [40, 256, 256] #z, x, y
+SCAN_SIZE = [32, 256, 256] #z, x, y
 clip_bounds = (-1000, 200)
 
 def create_3d_scan(id):
