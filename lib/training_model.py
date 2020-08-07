@@ -84,7 +84,7 @@ if __name__ == "__main__":
                 
                 goal = FVC[:,ranger[1:]]
                 mask = torch.zeros(len(ranger)-1).to(DEVICE)
-                mask[np.where(goal != 0)[0]] = 1
+                mask[np.where(goal != 0)[1]] = 1
                 goal = unscale(goal).to(DEVICE)
                 
                 loss = tools.laplace_log_likelihood(goal, mean, std, mask)
@@ -110,7 +110,7 @@ if __name__ == "__main__":
                     std = pred[:, :-1, 1]*100    
                     goal = FVC[:,ranger[1:]]
                     mask = torch.zeros(len(ranger)-1).to(DEVICE)
-                    mask[np.where(goal != 0)[0]] = 1
+                    mask[np.where(goal != 0)[1]] = 1
                     goal = unscale(goal).to(DEVICE)
 
                     loss = tools.laplace_log_likelihood(goal, mean, std, mask)
