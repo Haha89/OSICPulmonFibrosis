@@ -12,7 +12,8 @@ from scipy.ndimage import zoom
 from tools import get_path_id, get_scans_from_id, multi_slice_viewer
 import scipy.ndimage as ndimage
 from skimage import measure, morphology, segmentation
-from sklearn.cluster import KMeans
+
+
 PATH_DATA = "../data/"
 PIXEL_SPACING = 1
 SPACING_Z = 3
@@ -53,15 +54,20 @@ def create_3d_scan(id):
 
 def rescale(sample, bounds=(-1000, -200)):
     image, data = sample['image'], sample['metadata']
+    print(data)
     if data.PatientID == "ID00132637202222178761324":
         intercept = 2048
+    elif data.PatientID == "ID00128637202219474716089":
+        intercept = 1024  
     else:
         intercept = data.RescaleIntercept
     slope = data.RescaleSlope
-
+    
     image = (image * slope + intercept).astype(np.int16)
+    multi_slice_viewer(image, '64')
     image[image < min(bounds)] = min(bounds)
     image[image > max(bounds)] = max(bounds)
+
     return {'image': image, 'metadata': data}
 
 def bounding_box(img3d: np.array):
@@ -100,11 +106,12 @@ def crop(sample):
   
  
 def analyse(sample, min_hu, iterations):
-    stack = [seperate_lungs(scan, min_hu, iterations) for scan in sample['image']]
+    threshold = -900 if sample['metadata'].PatientID == "ID00229637202260254240583" else -700
+    stack = [seperate_lungs(scan, min_hu, iterations, threshold) for scan in sample['image']]
     return {'image': np.stack(stack), 'metadata': sample['metadata']}
 
 
-def seperate_lungs(image, min_hu, iterations):
+def seperate_lungs(image, min_hu, iterations, threshold =-700):
     """
     Segments lungs using various techniques.
     
@@ -115,7 +122,8 @@ def seperate_lungs(image, min_hu, iterations):
     """
     
     h, w = image.shape[0], image.shape[1]
-    marker_internal, marker_external, marker_watershed = generate_markers(image)
+    
+    marker_internal, marker_external, marker_watershed = generate_markers(image, threshold)
 
     # Sobel-Gradient
     sobel_filtered_dx = ndimage.sobel(image, 1)
@@ -144,7 +152,7 @@ def seperate_lungs(image, min_hu, iterations):
     return segmented
 
     
-def generate_markers(image, threshold=-700):
+def generate_markers(image, threshold):
     h, w = image.shape[0], image.shape[1]
 
     marker_internal = image < threshold
@@ -164,7 +172,7 @@ def generate_markers(image, threshold=-700):
 
     # Creation of the External Marker
     external_a = ndimage.binary_dilation(marker_internal, iterations=10)
-    external_b = ndimage.binary_dilation(marker_internal, iterations=55)
+    external_b = ndimage.binary_dilation(marker_internal, iterations=20)
     marker_external = external_b ^ external_a
 
     # Creation of the Watershed Marker
@@ -191,7 +199,6 @@ def resize(matrix, spacing, space_z):
                          int(starty):int(starty+SCAN_SIZE[2]//fy)]
     resized_mat = zoom(resized_mat, (fz, fx, fy))
     
-    
     #Add padding based on size
     z, x, y = resized_mat.shape
     z1 = (SCAN_SIZE[0] - z)//2
@@ -212,9 +219,12 @@ def process_3d_scan(id_patient):
     matrix, spacing, space_z, metadata = create_3d_scan(id_patient)
     sample = {'image': matrix, 'metadata': metadata} 
     sample = crop(sample)
+    
     sample['image'] = resize(sample['image'], spacing, space_z)
     sample_watershed = rescale(sample, bounds=clip_bounds)
-    processed_mat = analyse(sample_watershed, min(clip_bounds), 2)['image']
+    
+    multi_slice_viewer(sample_watershed['image'])
+    processed_mat = analyse(sample_watershed, min(clip_bounds), 1)['image']
     
     if np.min(processed_mat) - np.max(processed_mat) == 0: #Empty mask, return not modyfied
         min_matrix = np.min(sample['image']) #Normalization
@@ -229,19 +239,22 @@ def process_3d_scan(id_patient):
 
 if __name__ == "__main__":  
     FOLDERS = listdir(PATH_DATA + "train/")
-    for i, patient in enumerate(FOLDERS): #enumerate(["ID00128637202219474716089", "ID00132637202222178761324"]):
+    for i, patient in enumerate(FOLDERS): 
         try:
             data = process_3d_scan(id_patient=patient)
             with open(f'{PATH_DATA}scans/{patient}.npy', 'wb') as f:
                 np.save(f, process_3d_scan(id_patient=patient))
-            print(f"Index {i} - Patient : {patient} - Done")  
+            print(f"Index {i}/{len(FOLDERS)}")  
         except:
             print(i, patient)
     
-#     from random import sample       
-#     for patient in sample(FOLDERS, 1):
-#         patient = "ID00132637202222178761324"
-#         data = process_3d_scan(id_patient=patient)
-#         multi_slice_viewer(data)
+    # from random import sample       
+    # for patient in sample(FOLDERS, 1):
+    #     patient = "ID00132637202222178761324"
+    #     data = process_3d_scan(id_patient=patient)
+    #     with open(f'{PATH_DATA}scans/{patient}.npy', 'wb') as f:
+    #         np.save(f, data)
 
+
+#enumerate(["ID00128637202219474716089", "ID00132637202222178761324"]):
 # patient_bug1 = "ID00229637202260254240583"
