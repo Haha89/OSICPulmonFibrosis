@@ -60,6 +60,7 @@ if __name__ == "__main__":
         testing_generator = data.DataLoader(testing_set, batch_size=1, shuffle=False)
         
         histo = torch.zeros((NUM_EPOCHS, 2))
+    
         for epoch in range(NUM_EPOCHS):
             start_time = time.time()
             loss_train, loss_test = 0, 0
