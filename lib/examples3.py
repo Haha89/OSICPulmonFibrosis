@@ -15,7 +15,6 @@ if len(files)>1:
     for i, file in enumerate(files):
         with open(PATH_HISTO + file, "rb") as data:
             histo = torch.load(data)
-            print(histo)
         axs[i].plot(histo[:, 0].detach(), c='r', label="train")
         axs[i].plot(histo[:, 1].detach(), c='b', label="test")
         
@@ -28,7 +27,11 @@ else:
     fig, axs = plt.subplots()   
     plt.plot(histo[:, 0].detach(), c='r', label="train")
     plt.plot(histo[:, 1].detach(), c='b', label="test")
-    
+
+plt.xlabel("Epoch")
+plt.ylabel("Loss")
+
 plt.legend()
 plt.show()
         
+ 

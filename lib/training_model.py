@@ -22,9 +22,9 @@ os.environ["CUDA_VISIBLE_DEVICE"] = "0"
 """
 
 PATH_DATA = '../data/'
-NB_FOLDS = 1
+NB_FOLDS = 4
 LEARNING_RATE = 0.0001
-NUM_EPOCHS = 2
+NUM_EPOCHS = 40
 
 
 if __name__ == "__main__":
@@ -79,12 +79,11 @@ if __name__ == "__main__":
                 pred = model(scans, misc, fvc, percent,weeks)
                 #Deprocessing
                 mean = unscale(pred[:, :-1, 0])
-                print(mean)
                 std = pred[:, :-1, 1]*100
-                
-                goal = unscale(FVC[:,ranger[1:]]).to(DEVICE)
+                goal = FVC[:,ranger[1:]]
                 mask = torch.zeros(len(ranger)-1).to(DEVICE)
-                mask[np.where(FVC != 0)[0][1:]] = 1
+                mask[np.where(goal != 0)[1]] = 1
+                goal = unscale(goal).to(DEVICE)
                 
                 loss = tools.laplace_log_likelihood(goal, mean, std, mask)
                 loss_train += loss
@@ -107,9 +106,10 @@ if __name__ == "__main__":
                     #Deprocessing
                     mean = unscale(pred[:, :-1, 0])
                     std = pred[:, :-1, 1]*100    
-                    goal = unscale(FVC[:,ranger[1:]]).to(DEVICE)
+                    goal = FVC[:,ranger[1:]]
                     mask = torch.zeros(len(ranger)-1).to(DEVICE)
-                    mask[np.where(FVC != 0)[0]] = 1
+                    mask[np.where(goal != 0)[1]] = 1
+                    goal = unscale(goal).to(DEVICE)
 
                     loss = tools.laplace_log_likelihood(goal, mean, std, mask)
                     loss_test += loss
