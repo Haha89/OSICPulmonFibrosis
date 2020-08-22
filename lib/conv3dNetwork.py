@@ -23,7 +23,9 @@ class Convolutionnal_Network(nn.Module):
         self.output_dim = nb_features_out
         self.misc_dim = misc_dim
         self.hidden_lstm = lstm_size
-
+        self.dropout = nn.Dropout(p=0.2)
+        self.dropout5 = nn.Dropout(p=0.05)
+        
         # Define the 3D convolutionnal layers 512x512
         self.Conv01 = nn.Conv3d(self.input_dim,
                                 self.input_dim*self.multiplicator,
@@ -124,21 +126,29 @@ class Convolutionnal_Network(nn.Module):
     def forward(self, scans, misc, fvc, percent, weeks):
         """Forward function"""
         # batch_size, channels, depth, width, height = scans.shape
-
-        x = F.relu(self.bn01(self.Conv01(scans)))
-        x = F.relu(self.bn02(self.Conv02(x)))
+        
+        x = self.bn01(self.Conv01(scans))
+        x = self.dropout5(x) #ALEX
+        x = F.relu(x)
+        x = self.bn02(self.Conv02(x))
+        x = self.dropout5(x) #ALEX
+        x = F.relu(x)
 
         interm0 = self.reduce0(x)
         x = self.pool0(x)
 
         x = F.relu(self.bn11(self.Conv11(x)))
+        x = self.dropout5(x) #ALEX
         x = F.relu(self.bn12(self.Conv12(x)))
+        x = self.dropout5(x) #ALEX
 
         interm1 = self.reduce1(x)
         x = self.pool1(x)
 
         x = F.relu(self.bn21(self.Conv21(x)))
+        x = self.dropout5(x) #ALEX
         x = F.relu(self.bn22(self.Conv22(x)))
+        x = self.dropout5(x) #ALEX
 
         interm2 = self.reduce2(x)
         x = self.pool2(x)
@@ -148,17 +158,19 @@ class Convolutionnal_Network(nn.Module):
 
         interm3 = self.reduce3(x)
         x = self.pool3(x)
-
+        
+        x = self.dropout(x) #ALEX
         x = F.relu(self.bn41(self.Conv41(x)))
+        x = self.dropout(x) #ALEX
         x = F.relu(self.bn42(self.Conv42(x)))
-        x = torch.cat((x, interm0, interm1, interm2, interm3), dim=1) #BUG LA JE CROIS
+        x = torch.cat((x, interm0, interm1, interm2, interm3), dim=1)
         
         batch_size, nb_features, depth, width, height = x.shape
         x = x.view(batch_size, -1)
-
+        x = self.dropout(x) #ALEX
         x = F.relu(self.postpross1(x))
+        x = self.dropout(x) #ALEX
         x = F.relu(self.postpross2(x))
-
         outputs_scan = self.out(x)
 
         leng = weeks.shape[-1]
@@ -173,20 +185,25 @@ class Convolutionnal_Network(nn.Module):
         percent_over_time = percent_over_time.expand(batch_size, leng, 1)
 
         evolution = torch.cat((scans_over_time, misc, fvc_over_time, percent_over_time), -1)
+        evolution = self.dropout(evolution) #ALEX
         evolution = F.relu(self.data_process1(evolution))
+        evolution = self.dropout(evolution) #ALEX
         evolution = F.relu(self.data_process2(evolution))
         
         weeks = weeks.view(batch_size, leng, 1)
 
         evolution = torch.cat((evolution, weeks), -1)
+        evolution = self.dropout(evolution) #ALEX
         evolution = F.relu(self.evolution_process1(evolution))
+        evolution = self.dropout(evolution) #ALEX
         evolution = F.relu(self.evolution_process2(evolution))
 
         out1, _ = self.LSTM1(evolution, None)
         evolution = torch.cat((evolution, out1), -1)
         evolution, _ = self.LSTM2(evolution, None)
         evolution = evolution.contiguous()
-
+        evolution = self.dropout(evolution) #ALEX
+        
         evolution = F.relu(self.postprocess1(evolution))
         output = self.postprocess2(evolution)
         output[:,:,1] = torch.cumsum(torch.sigmoid(output[:,:,1]),-1)

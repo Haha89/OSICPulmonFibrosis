@@ -22,9 +22,9 @@ os.environ["CUDA_VISIBLE_DEVICE"] = "0"
 """
 
 PATH_DATA = '../data/'
-NB_FOLDS = 4
+NB_FOLDS = 1
 LEARNING_RATE = 0.0001
-NUM_EPOCHS = 40
+NUM_EPOCHS = 30
 
 
 if __name__ == "__main__":
@@ -90,7 +90,7 @@ if __name__ == "__main__":
                 loss_train += loss
                 loss.backward() # Gradient Computation
                 optimiser.step() # Update parameters
-                  
+
             #VALIDATION
             with torch.no_grad():
                 model.eval()
