@@ -15,10 +15,11 @@ from pickle import dump, load
 PATH_DATA = "../data/"
 PIXEL_SPACING = 0.8
 THICKNESS = 1
-SCAN_SIZE = [128, 128, 128] #z, x, y
+SCAN_SIZE = [128, 128, 128]
+
 
 def get_id_folders(indice):
-    """Retunds the ID of the patient for a specific index"""
+    """Return the ID of the patient for a specific index."""
     try:
         return listdir(PATH_DATA + "train/")[indice]
     except:
@@ -28,7 +29,7 @@ def get_id_folders(indice):
 
 def get_path_id(id_patient):
     """Returns the path of the folder containing the patient ID CT scans.
-    Notifies if the path is not found"""
+    Notifies if the path is not found."""
     path_folder = f"{PATH_DATA}train/{id_patient}"
     if path.isdir(path_folder):
         return path_folder
@@ -37,7 +38,7 @@ def get_path_id(id_patient):
 
 
 def get_scans_from_id(id_patient):
-    """Returns an ordered list of CT scans filenames from the id_patient"""
+    """Returns an ordered list of CT scans filenames from the id_patient."""
     path_folder = get_path_id(id_patient)
     if path_folder:
         return sorted(listdir(path_folder), key=lambda f: int(f.split(".")[0]))
@@ -45,15 +46,14 @@ def get_scans_from_id(id_patient):
 
 
 def crop_slice(s):
-    """Crop frames from slices, borders where only 0"""
+    """Crop frames from slices, borders where only 0."""
     s_cropped = s[~np.all(s == 0, axis=1)]
     s_cropped = s_cropped[:, ~np.all(s_cropped == 0, axis=0)]
     return s_cropped
 
 
 def multi_slice_viewer(matrix_3d, title=None):
-    """Visualization of the matrix slice by slice.
-    Allegrement Stolen online"""
+    """Visualization of the matrix slice by slice.Allegrement Stolen online."""
 
     def process_key(event):
         fig = event.canvas.figure
@@ -73,17 +73,17 @@ def multi_slice_viewer(matrix_3d, title=None):
 
 
 def get_3d_scan(id_patient):
-    """Loads and returns the 3d array of id_patient"""
+    """Load and returns the 3d array of id_patient."""
     return np.load(f"{PATH_DATA}scans/{id_patient}.npy", allow_pickle=True)
 
 
 def unormalize_fvc(data):
-    """Returns the min and max FVC from dataset"""
+    """Return the min and max FVC from dataset."""
     return(data["FVC"].min(), data["FVC"].max())
 
 
 def preprocessing_data(data):
-    """Preprocessing of the csv file, add one hot encoder and normalization between [0,1]"""
+    """Preprocess the csv file, add one hot encoder and normalization between [0,1]."""
     data = pd.get_dummies(data, columns=['Sex', 'SmokingStatus'])
     #Creation of dict containing min, max, mean, std of columns
     dict_postpro = {}
@@ -101,7 +101,7 @@ def preprocessing_data(data):
 
 
 def filter_data(data, id_patient=None, indice=None):
-    """Returns the data only for the id_patient"""
+    """Return the data only for the id_patient."""
     if id_patient is None:
         id_patient = get_id_folders(indice)
         
@@ -146,7 +146,7 @@ def filter_data(data, id_patient=None, indice=None):
 
 
 def get_data():
-    """Returns the content proprocessed on the train.csv file (containing patient data)"""
+    """Return the content proprocessed on the train.csv file (containing patient data)."""
     raw_data = pd.read_csv(PATH_DATA + 'train.csv')
     #mini, maxi = unormalize_fvc(raw_data)
     #np.save("minmax",np.array([mini,maxi]))

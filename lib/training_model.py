@@ -24,16 +24,16 @@ os.environ["CUDA_VISIBLE_DEVICE"] = "0"
 PATH_DATA = '../data/'
 NB_FOLDS = 1
 LEARNING_RATE = 0.0001
-NUM_EPOCHS = 30
+NUM_EPOCHS = 50
 
 
 if __name__ == "__main__":
-    
+
     unscale = lambda x: x*(MAXI_FVC-MINI_FVC) + MINI_FVC
     
     for f in glob(f"{PATH_DATA}/histo-fold/histo-fold-*.pt"): #Removes existing histo-fold-X.pt
         remove(f)
-        
+
     with open('minmax.pickle', 'rb') as minmax_file:
         dict_extremum = load(minmax_file)
         
@@ -121,3 +121,8 @@ if __name__ == "__main__":
             histo[epoch, 0] = loss_train
             histo[epoch, 1] = loss_test
         torch.save(histo, f"{PATH_DATA}/histo-fold/histo-fold-{k}.pt")
+        
+        CHECKPOINT = {'model': model,
+                  'state_dict': model.state_dict(),
+                  'optimiser' : optimiser.state_dict()}
+        torch.save(CHECKPOINT, f'../data/model/model-{k}.pth')
