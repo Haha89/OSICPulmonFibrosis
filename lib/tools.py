@@ -126,8 +126,9 @@ def filter_data(data, id_patient=None, indice=None):
     for i, week in enumerate(postpro_weeks):
         fvc[week+5] = filtered_data.FVC.values[i]
         percent[week+5] = filtered_data.Percent.values[i]
-        
-    weeks[postpro_min:postpro_max] = torch.tensor(week_val)[0]
+        weeks[week+5] = week+5
+    
+    #weeks[postpro_min:postpro_max] = torch.tensor(week_val)[0]
     misc[postpro_min:postpro_max, 0] = torch.tensor(filtered_data.Age.values)[0]
     misc[postpro_min:postpro_max, 1] = torch.tensor(filtered_data.Sex_Male.values)[0]
     misc[postpro_min:postpro_max, 2] = torch.tensor(0.5*np.array(filtered_data['SmokingStatus_Currently smokes']) +\
