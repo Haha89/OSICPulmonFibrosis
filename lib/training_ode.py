@@ -94,7 +94,7 @@ if __name__ == "__main__":
                 model.eval()
                 for scans, misc, FVC, percent, weeks in testing_generator:
                     ranger = np.where(weeks != 0)[1]
-                    misc = misc[:,ranger]
+                    misc = misc[:,ranger[0],:].squeeze(1) #Dépend du m
                     fvc = FVC[:,ranger[0]]
                     percent = percent[:,ranger[0]]
                     weeks = weeks[:,ranger]
