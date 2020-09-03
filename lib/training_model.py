@@ -69,7 +69,7 @@ if __name__ == "__main__":
             #TRAINING    
             for scans, misc, FVC, percent, weeks in training_generator:
                 ranger = np.where(weeks != 0)[1]
-                misc = misc[:,ranger]
+                misc = misc[:,ranger,:]
                 fvc = FVC[:,ranger[0]]
                 percent = percent[:,ranger[0]]
                 weeks = weeks[:,ranger]
