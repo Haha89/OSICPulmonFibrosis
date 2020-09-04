@@ -198,5 +198,5 @@ class ODE_Network(nn.Module):
         evolution = F.relu(self.decode1(evolution))
         evolution = self.dropout(evolution) #ALEX
         output = self.decode2(evolution)
-        
+        output[:,:,1] = torch.cumsum(abs(output[:,:,1]))
         return output
