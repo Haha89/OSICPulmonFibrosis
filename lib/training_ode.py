@@ -82,7 +82,7 @@ if __name__ == "__main__":
                 goal = FVC[:,ranger[1:]]
                 goal = unscale(goal).to(DEVICE)
                 
-                loss = tools.laplace_log_likelihood(goal, mean, std)
+                loss = tools.ode_laplace_log_likelihood(goal, mean, std)
                 loss_train += loss
                 loss.backward() # Gradient Computation
                 optimiser.step() # Update parameters
@@ -106,7 +106,7 @@ if __name__ == "__main__":
                     goal = FVC[:,ranger[1:]]
                     goal = unscale(goal).to(DEVICE)
 
-                    loss = tools.laplace_log_likelihood(goal, mean, std)
+                    loss = tools.ode_laplace_log_likelihood(goal, mean, std)
                     loss_test += loss
                     
             loss_train = loss_train/len(training_generator)
