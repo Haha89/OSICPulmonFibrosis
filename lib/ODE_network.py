@@ -197,6 +197,6 @@ class ODE_Network(nn.Module):
         evolution = self.dropout(latent) #ALEX
         evolution = F.relu(self.decode1(evolution))
         evolution = self.dropout(evolution) #ALEX
-        output = F.relu(self.decode2(evolution))
+        output = self.decode2(evolution)
         
         return output
