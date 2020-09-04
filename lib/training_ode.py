@@ -80,11 +80,9 @@ if __name__ == "__main__":
                 mean = unscale(pred[:, :-1, 0])
                 std = pred[:, :-1, 1]*100
                 goal = FVC[:,ranger[1:]]
-                mask = torch.zeros(len(ranger)-1).to(DEVICE)
-                mask[np.where(goal != 0)[1]] = 1
                 goal = unscale(goal).to(DEVICE)
                 
-                loss = tools.laplace_log_likelihood(goal, mean, std, mask)
+                loss = tools.laplace_log_likelihood(goal, mean, std)
                 loss_train += loss
                 loss.backward() # Gradient Computation
                 optimiser.step() # Update parameters
@@ -106,11 +104,9 @@ if __name__ == "__main__":
                     mean = unscale(pred[:, :-1, 0])
                     std = pred[:, :-1, 1]*100    
                     goal = FVC[:,ranger[1:]]
-                    mask = torch.zeros(len(ranger)-1).to(DEVICE)
-                    mask[np.where(goal != 0)[1]] = 1
                     goal = unscale(goal).to(DEVICE)
 
-                    loss = tools.laplace_log_likelihood(goal, mean, std, mask)
+                    loss = tools.laplace_log_likelihood(goal, mean, std)
                     loss_test += loss
                     
             loss_train = loss_train/len(training_generator)
