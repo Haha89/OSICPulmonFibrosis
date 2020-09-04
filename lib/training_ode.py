@@ -14,15 +14,16 @@ from glob import glob
 
 DEVICE = ("cuda" if torch.cuda.is_available() else "cpu")
 
+
 """
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICE"] = "0"
 """
 
 PATH_DATA = '../data/'
-NB_FOLDS = 1
+NB_FOLDS = 3
 LEARNING_RATE = 0.0001
-NUM_EPOCHS = 50
+NUM_EPOCHS = 13
 
 
 if __name__ == "__main__":
@@ -43,9 +44,9 @@ if __name__ == "__main__":
     
     for k in range(NB_FOLDS):
         indices_train, indices_test = tools.train_test_indices(FOLD_LABELS, k)
-        model = ODE_Network(1, 20, (256, 256, 32), 16, 64, 3, 64)
+        model = ODE_Network(1, 10, (256, 256, 32), 16, 64, 3, 64)
         model.to(DEVICE)
-        optimiser = optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=5e-9)
+        optimiser = optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=5e-8)
     
         #####################
         # Loding of data
@@ -70,18 +71,34 @@ if __name__ == "__main__":
                 misc = misc[:,ranger[0],:].squeeze(1) #Dépend du m
                 fvc = FVC[:,ranger[0]]
                 percent = percent[:,ranger[0]]
-                weeks = weeks[:,ranger] 
+                weeks = weeks[:,ranger]
                 weeks = weeks - weeks[:,0]
                 scans, misc = scans.to(DEVICE), misc.to(DEVICE)
                 fvc, percent, weeks = fvc.to(DEVICE), percent.to(DEVICE), weeks.to(DEVICE)
                 # Clear stored gradient
                 optimiser.zero_grad()
+                
+                
                 pred = model(scans, misc, fvc, percent,weeks)
                 #Deprocessing
-                mean = unscale(pred[:, :, 0])
-                std = pred[:, :, 1]*100
-                goal = FVC[:,ranger]
+                mean = unscale(pred[:, :-1, 0])
+                std = pred[:, :-1, 1]*100
+                goal = FVC[:,ranger[1:]]
                 goal = unscale(goal).to(DEVICE)
+                
+                # print("Weeks")
+                # print(weeks)
+                # print("FVC")
+                # print(fvc)
+                # print("MISC")
+                # print(misc)
+                # print("Goal")
+                # print(goal)
+                # print("MEAN"
+                # print(mean)
+                # print("STD")
+                # print(std)
+                # print("+++++++++++++++")
                 
                 loss = tools.ode_laplace_log_likelihood(goal, mean, std)
                 loss_train += loss
@@ -103,9 +120,9 @@ if __name__ == "__main__":
                     pred = model(scans, misc, fvc, percent,weeks)
                     
                     #Deprocessing
-                    mean = unscale(pred[:, :, 0])
-                    std = pred[:, :, 1]*100    
-                    goal = FVC[:,ranger]
+                    mean = unscale(pred[:, :-1, 0])
+                    std = pred[:, :-1, 1]*100    
+                    goal = FVC[:,ranger[1:]]
                     goal = unscale(goal).to(DEVICE)
 
                     loss = tools.ode_laplace_log_likelihood(goal, mean, std)
