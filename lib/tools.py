@@ -16,6 +16,9 @@ PATH_DATA = "../data/"
 PIXEL_SPACING = 0.8
 THICKNESS = 1
 SCAN_SIZE = [128, 128, 128]
+OFFSET_WEEKS = 5
+
+DEVICE = ("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def get_id_folders(indice):
@@ -92,7 +95,7 @@ def preprocessing_data(data):
         dict_postpro[col] = {"min": data[col].min(), "max": data[col].max()}
         data[col] = (data[col] - data[col].min())/(data[col].max() - data[col].min())
     dict_postpro["Weeks"] = {"mean": data.Weeks.mean(), "std": data.Weeks.std()}   
-    data.Weeks = (data.Weeks - data.Weeks.mean())/data.Weeks.std()
+    # data.Weeks = (data.Weeks - data.Weeks.mean())/data.Weeks.std()
     data["Percent"] = data["Percent"]/100.
     
     with open('minmax.pickle', 'wb') as file_save:
@@ -108,8 +111,8 @@ def filter_data(data, id_patient=None, indice=None):
     filtered_data = data[data.Patient == id_patient]
     week_val = filtered_data.Weeks.values
     
-    fvc = torch.zeros((140))
-    percent = torch.zeros((140))
+    fvc = torch.zeros((140, 1)) #Avant (140)
+    percent = torch.zeros((140, 1)) #Avant (140)
     weeks = torch.zeros((140))
     misc = torch.zeros((140, 3))
     
@@ -119,20 +122,21 @@ def filter_data(data, id_patient=None, indice=None):
         dict_extremum = load(minmax_file)
         
     MEAN_week, STD_week = dict_extremum['Weeks']["mean"], dict_extremum['Weeks']["std"]
-    postpro_weeks = (week_val * STD_week + MEAN_week).astype('int')
-    postpro_min, postpro_max = np.min(postpro_weeks) + 5, np.max(postpro_weeks) + 5
-    
+    postpro_weeks = week_val # (week_val * STD_week + MEAN_week).astype('int') MODIF ALEX 03/9
+    postpro_min, postpro_max = np.min(postpro_weeks) + OFFSET_WEEKS, np.max(postpro_weeks) + OFFSET_WEEKS
     
     for i, week in enumerate(postpro_weeks):
-        fvc[week+5] = filtered_data.FVC.values[i]
-        percent[week+5] = filtered_data.Percent.values[i]
-        weeks[week+5] = week+5
-    
+        fvc[week + OFFSET_WEEKS] = filtered_data.FVC.values[i]
+        percent[week + OFFSET_WEEKS] = filtered_data.Percent.values[i]
+        weeks[week + OFFSET_WEEKS] = week + OFFSET_WEEKS
+
+
     #weeks[postpro_min:postpro_max] = torch.tensor(week_val)[0]
     misc[postpro_min:postpro_max, 0] = torch.tensor(filtered_data.Age.values)[0]
     misc[postpro_min:postpro_max, 1] = torch.tensor(filtered_data.Sex_Male.values)[0]
     misc[postpro_min:postpro_max, 2] = torch.tensor(0.5*np.array(filtered_data['SmokingStatus_Currently smokes']) +\
         np.array(filtered_data['SmokingStatus_Ex-smoker']))[0]
+        
         
     # for i, week in enumerate(week_val):
     #     fvc[week+5] = filtered_data.FVC.values[i]
@@ -194,8 +198,8 @@ def laplace_log_likelihood(actual_fvc, predicted_fvc, confidence, mask):
     """
     Calculates the modified Laplace Log Likelihood score for this competition.
     """
-    std_min = torch.tensor([70.]).cuda()
-    delta_max = torch.tensor([1000.]).cuda()
+    std_min = torch.tensor([70.]).to(DEVICE)
+    delta_max = torch.tensor([1000.]).to(DEVICE)
     std_clipped = torch.max(confidence, std_min)
     delta = torch.min(torch.abs(actual_fvc - predicted_fvc), delta_max)
     metric = (- sqrt(2) * delta / std_clipped - torch.log(sqrt(2) * std_clipped))*mask
@@ -208,10 +212,11 @@ def ode_laplace_log_likelihood(actual_fvc, predicted_fvc, confidence):
     """
     Calculates the modified Laplace Log Likelihood score for this competition.
     """
-    std_min = torch.tensor([70.]).cuda()
-    delta_max = torch.tensor([1000.]).cuda()
+    std_min = torch.tensor([70.]).to(DEVICE)
+    delta_max = torch.tensor([1000.]).to(DEVICE)
     std_clipped = torch.max(confidence, std_min)
     delta = torch.min(torch.abs(actual_fvc - predicted_fvc), delta_max)
     metric = (- sqrt(2) * delta / std_clipped - torch.log(sqrt(2) * std_clipped))
     metric = metric.mean()
     return -metric
+
