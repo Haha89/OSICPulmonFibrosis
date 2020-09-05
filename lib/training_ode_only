@@ -92,7 +92,7 @@ if __name__ == "__main__":
                 ranger = np.where(weeks != 0)[1]
                 misc = misc[:,ranger[0],:].squeeze(1) #Dépend du m
                 fvc = FVC[:,ranger[0]]
-                std = torch.zeros_like(fvc) 
+                std = torch.ones_like(fvc)*70 
                 fvc = torch.cat((fvc, std),1)
                 percent = percent[:,ranger[0]]
                 weeks = weeks[:,ranger]
@@ -136,7 +136,7 @@ if __name__ == "__main__":
                     ranger = np.where(weeks != 0)[1]
                     misc = misc[:,ranger[0],:].squeeze(1) #Dépend du m
                     fvc = FVC[:,ranger[0]]
-                    std = torch.zeros_like(fvc) 
+                    std = torch.ones_like(fvc)*70
                     fvc = torch.cat((fvc, std),1)
                     percent = percent[:,ranger[0]]
                     weeks = weeks[:,ranger]
