@@ -81,9 +81,9 @@ if __name__ == "__main__":
                 
                 pred = model(scans, misc, fvc, percent,weeks)
                 #Deprocessing
-                mean = unscale(pred[:, :-1, 0])
-                std = pred[:, :-1, 1]*100
-                goal = FVC[:,ranger[1:]]
+                mean = unscale(pred[:, :, 0])
+                std = pred[:, :, 1]*100
+                goal = FVC[:,ranger]
                 goal = unscale(goal).to(DEVICE)
                 
                 # print("Weeks")
@@ -120,9 +120,9 @@ if __name__ == "__main__":
                     pred = model(scans, misc, fvc, percent,weeks)
                     
                     #Deprocessing
-                    mean = unscale(pred[:, :-1, 0])
-                    std = pred[:, :-1, 1]*100    
-                    goal = FVC[:,ranger[1:]]
+                    mean = unscale(pred[:, :, 0])
+                    std = pred[:, :, 1]*100    
+                    goal = FVC[:,ranger]
                     goal = unscale(goal).to(DEVICE)
 
                     loss = tools.ode_laplace_log_likelihood(goal, mean, std)
