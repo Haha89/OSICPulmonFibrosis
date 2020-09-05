@@ -32,7 +32,7 @@ class LatentODEfunc(nn.Module):
     def __init__(self, latent_dim=2, nhidden=20):
         super(LatentODEfunc, self).__init__()
         self.elu = nn.ELU(inplace=True)
-        self.fc1 = nn.Linear(1, nhidden)
+        self.fc1 = nn.Linear(latent_dim, nhidden)
         self.fc2 = nn.Linear(nhidden, nhidden)
         self.fc3 = nn.Linear(nhidden, latent_dim)
         self.nfe = 0
@@ -92,6 +92,8 @@ if __name__ == "__main__":
                 ranger = np.where(weeks != 0)[1]
                 misc = misc[:,ranger[0],:].squeeze(1) #Dépend du m
                 fvc = FVC[:,ranger[0]]
+                std = torch.zeros_like(fvc) 
+                fvc = torch.cat((fvc, std),1)
                 percent = percent[:,ranger[0]]
                 weeks = weeks[:,ranger]
                 weeks = weeks - weeks[:,0]
@@ -134,6 +136,8 @@ if __name__ == "__main__":
                     ranger = np.where(weeks != 0)[1]
                     misc = misc[:,ranger[0],:].squeeze(1) #Dépend du m
                     fvc = FVC[:,ranger[0]]
+                    std = torch.zeros_like(fvc) 
+                    fvc = torch.cat((fvc, std),1)
                     percent = percent[:,ranger[0]]
                     weeks = weeks[:,ranger]
                     weeks = weeks - weeks[:,0]
