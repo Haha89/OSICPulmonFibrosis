@@ -219,7 +219,10 @@ def ode_laplace_log_likelihood(actual_fvc, predicted_fvc, confidence, epoch, epo
         delta = torch.min(torch.abs(actual_fvc - predicted_fvc), delta_max)
         metric = (- sqrt(2) * delta / std_clipped - torch.log(sqrt(2) * std_clipped))
         metric = -metric.mean()
-    else : 
-        metric = torch.norm(actual_fvc - predicted_fvc).mean()
+    else :
+        std_clipped = confidence
+        delta = torch.abs(actual_fvc - predicted_fvc)
+        metric = (- sqrt(2) * delta / std_clipped - torch.log(sqrt(2) * std_clipped))
+        metric = -metric.mean()
     return metric
 
