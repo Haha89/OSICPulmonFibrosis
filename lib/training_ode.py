@@ -13,17 +13,11 @@ from os import remove
 from glob import glob
 
 DEVICE = ("cuda" if torch.cuda.is_available() else "cpu")
-
-
-"""
-os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICE"] = "0"
-"""
-
+# DEVICE = "cpu"
 PATH_DATA = '../data/'
-NB_FOLDS = 3
+NB_FOLDS = 1
 LEARNING_RATE = 0.0001
-NUM_EPOCHS = 13
+NUM_EPOCHS = 35
 
 
 if __name__ == "__main__":
@@ -43,8 +37,9 @@ if __name__ == "__main__":
     FOLD_LABELS = np.load("4-folds-split.npy")
     
     for k in range(NB_FOLDS):
+        torch.cuda.empty_cache()
         indices_train, indices_test = tools.train_test_indices(FOLD_LABELS, k)
-        model = ODE_Network(1, 10, (256, 256, 32), 16, 64, 3, 64)
+        model = ODE_Network(1, 10, (256, 256, 32), 16, 32, 3, 64)
         model.to(DEVICE)
         optimiser = optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=5e-8)
     
@@ -67,40 +62,29 @@ if __name__ == "__main__":
 
             #TRAINING    
             for scans, misc, FVC, percent, weeks in training_generator:
+
                 ranger = np.where(weeks != 0)[1]
                 misc = misc[:,ranger[0],:].squeeze(1) #Dépend du m
                 fvc = FVC[:,ranger[0]]
+                std = torch.ones_like(fvc)*.7
+                fvc = torch.cat((fvc, std),1)
                 percent = percent[:,ranger[0]]
                 weeks = weeks[:,ranger]
                 weeks = weeks - weeks[:,0]
                 scans, misc = scans.to(DEVICE), misc.to(DEVICE)
                 fvc, percent, weeks = fvc.to(DEVICE), percent.to(DEVICE), weeks.to(DEVICE)
+                
                 # Clear stored gradient
                 optimiser.zero_grad()
+                pred = model(scans, misc, fvc, percent, weeks)
                 
-                
-                pred = model(scans, misc, fvc, percent,weeks)
                 #Deprocessing
                 mean = unscale(pred[:, :, 0])
-                std = pred[:, :, 1]*100
+                std = pred[:, :, 1]*500 
                 goal = FVC[:,ranger]
                 goal = unscale(goal).to(DEVICE)
                 
-                # print("Weeks")
-                # print(weeks)
-                # print("FVC")
-                # print(fvc)
-                # print("MISC")
-                # print(misc)
-                # print("Goal")
-                # print(goal)
-                # print("MEAN"
-                # print(mean)
-                # print("STD")
-                # print(std)
-                # print("+++++++++++++++")
-                
-                loss = tools.ode_laplace_log_likelihood(goal, mean, std)
+                loss = tools.ode_laplace_log_likelihood(goal, mean, std, epoch, 25)
                 loss_train += loss
                 loss.backward() # Gradient Computation
                 optimiser.step() # Update parameters
@@ -112,20 +96,22 @@ if __name__ == "__main__":
                     ranger = np.where(weeks != 0)[1]
                     misc = misc[:,ranger[0],:].squeeze(1) #Dépend du m
                     fvc = FVC[:,ranger[0]]
+                    std = torch.ones_like(fvc)*.7
+                    fvc = torch.cat((fvc, std),1)
                     percent = percent[:,ranger[0]]
                     weeks = weeks[:,ranger]
                     weeks = weeks - weeks[:,0]
                     scans, misc = scans.to(DEVICE), misc.to(DEVICE)
                     fvc, percent, weeks = fvc.to(DEVICE), percent.to(DEVICE), weeks.to(DEVICE)
-                    pred = model(scans, misc, fvc, percent,weeks)
+                    pred = model(scans, misc, fvc, percent, weeks)
                     
                     #Deprocessing
                     mean = unscale(pred[:, :, 0])
-                    std = pred[:, :, 1]*100    
+                    std = pred[:, :, 1]*500    
                     goal = FVC[:,ranger]
                     goal = unscale(goal).to(DEVICE)
 
-                    loss = tools.ode_laplace_log_likelihood(goal, mean, std)
+                    loss = tools.ode_laplace_log_likelihood(goal, mean, std, epoch, 25)
                     loss_test += loss
                     
             loss_train = loss_train/len(training_generator)
@@ -133,6 +119,9 @@ if __name__ == "__main__":
             print(f'| Epoch: {epoch+1} | Train Loss: {loss_train:.3f} | Test. Loss: {loss_test:.3f} |')
             histo[epoch, 0] = loss_train
             histo[epoch, 1] = loss_test
+        
+        DATA_SAVE = {'weeks': weeks, 'fvc': fvc, 'misc': misc, 'goal': goal, 'mean': mean, 'std': std}
+        torch.save(DATA_SAVE, f"{PATH_DATA}/saved_data/data_save.pt")        
         torch.save(histo, f"{PATH_DATA}/histo-fold/histo-fold-{k}.pt")
         
         CHECKPOINT = {'model': model,
