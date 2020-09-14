@@ -213,16 +213,12 @@ def ode_laplace_log_likelihood(actual_fvc, predicted_fvc, confidence, epoch, epo
     Calculates the modified Laplace Log Likelihood score for this competition.
     """
     if epoch > epoch_max : 
-        std_min = torch.tensor([70.]).to(DEVICE)
-        delta_max = torch.tensor([1000.]).to(DEVICE)
-        std_clipped = torch.max(confidence, std_min)
-        delta = torch.min(torch.abs(actual_fvc - predicted_fvc), delta_max)
-        metric = (- sqrt(2) * delta / std_clipped - torch.log(sqrt(2) * std_clipped))
-        metric = -metric.mean()
+        std_clipped = torch.max(confidence, torch.tensor([70.]).to(DEVICE))
+        delta = torch.min(torch.abs(actual_fvc - predicted_fvc), torch.tensor([1000.]).to(DEVICE))
     else :
         std_clipped = torch.abs(confidence)
         delta = torch.abs(actual_fvc - predicted_fvc)
-        metric = (- sqrt(2) * delta / std_clipped - torch.log(sqrt(2) * std_clipped))
-        metric = -metric.mean()
-    return metric
+        
+    metric = (- sqrt(2) * delta / std_clipped - torch.log(sqrt(2) * std_clipped))
+    return -metric.mean()
 
