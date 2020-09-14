@@ -123,43 +123,43 @@ class ODE_Network(nn.Module):
         self.postpross1 = nn.Linear(input_dim_pp, self.hidden_dim_linear*2)
         
         self.postpross2 = nn.Linear(self.hidden_dim_linear*2, self.hidden_dim_linear)
-
         self.out = nn.Linear(self.hidden_dim_linear, self.output_dim)
+        self.data_process1 = nn.Linear(self.output_dim + self.misc_dim + 3,
+                                        self.output_dim)
+        # self.data_process2 = nn.Linear(self.hidden_dim_linear,
+        #                                 self.output_dim)
+        # self.decode1 = nn.Linear(self.output_dim,
+        #                                 self.hidden_dim_linear)
+        self.decode2 = nn.Linear(self.output_dim, 2) 
 
-        self.data_process1 = nn.Linear(self.output_dim + self.misc_dim + 2,
-                                       self.hidden_dim_linear)
-        self.data_process2 = nn.Linear(self.hidden_dim_linear,
-                                       self.output_dim)
-        self.decode1 = nn.Linear(self.output_dim,
-                                       self.hidden_dim_linear)
-        self.decode2 = nn.Linear(self.hidden_dim_linear, 2)
+
 
     def forward(self, scans, misc, fvc, percent, weeks):
         """Forward function"""
         # batch_size, channels, depth, width, height = scans.shape
         
         x = self.bn01(self.Conv01(scans))
-        x = self.dropout5(x) #ALEX
+        # x = self.dropout5(x) #ALEX
         x = F.relu(x)
         x = self.bn02(self.Conv02(x))
-        x = self.dropout5(x) #ALEX
+        # x = self.dropout5(x) #ALEX
         x = F.relu(x)
 
         interm0 = self.reduce0(x)
         x = self.pool0(x)
 
         x = F.relu(self.bn11(self.Conv11(x)))
-        x = self.dropout5(x) #ALEX
+        # x = self.dropout5(x) #ALEX
         x = F.relu(self.bn12(self.Conv12(x)))
-        x = self.dropout5(x) #ALEX
+        # x = self.dropout5(x) #ALEX
 
         interm1 = self.reduce1(x)
         x = self.pool1(x)
 
         x = F.relu(self.bn21(self.Conv21(x)))
-        x = self.dropout5(x) #ALEX
+        # x = self.dropout5(x) #ALEX
         x = F.relu(self.bn22(self.Conv22(x)))
-        x = self.dropout5(x) #ALEX
+        # x = self.dropout5(x) #ALEX
 
         interm2 = self.reduce2(x)
         x = self.pool2(x)
@@ -170,33 +170,33 @@ class ODE_Network(nn.Module):
         interm3 = self.reduce3(x)
         x = self.pool3(x)
         
-        x = self.dropout(x) #ALEX
+        # x = self.dropout(x) #ALEX
         x = F.relu(self.bn41(self.Conv41(x)))
-        x = self.dropout(x)
+        # x = self.dropout(x)
         x = F.relu(self.bn42(self.Conv42(x)))
         x = torch.cat((x, interm0, interm1, interm2, interm3), dim=1)
-
+        
         batch_size, nb_features, depth, width, height = x.shape
         x = x.view(batch_size, -1)
-        x = self.dropout(x)
+        # x = self.dropout(x)
         x = F.relu(self.postpross1(x))
-        x = self.dropout(x)
+        # x = self.dropout(x)
         x = F.relu(self.postpross2(x))
         outputs_scan = self.out(x)
-
-        ###
+        
         evolution = torch.cat((outputs_scan, misc, fvc, percent), -1)
-        evolution = self.dropout(evolution)
+        # evolution = self.dropout(evolution)
         evolution = F.relu(self.data_process1(evolution))
-        evolution = self.dropout(evolution) 
-        evolution = F.relu(self.data_process2(evolution))
+        # evolution = self.dropout(evolution) 
+        # evolution = F.relu(self.data_process2(evolution))
         latent = odeint(self.func,evolution, weeks.squeeze(0)).permute(1,0,2)
-
-        evolution = self.dropout(latent) #ALEX
-        evolution = F.relu(self.decode1(evolution))
-        evolution = self.dropout(evolution) #ALEX
-        output = self.decode2(evolution)
-        output[:,:,1] = torch.cumsum(abs(output[:,:,1]), -1)
-
-        return output
-
+                
+        # evolution = self.dropout(latent)
+        # evolution = F.relu(self.decode1(evolution))
+        # evolution = self.dropout(evolution)
+        output = self.decode2(latent)
+        
+        # output[:,:,0] = nn.Sigmoid()(output[:,:,0])
+        # output[:,:,1] = nn.Sigmoid()(output[:,:,1])
+        # output = torch.sigmoid(output)
+        return nn.Sigmoid()(output)
