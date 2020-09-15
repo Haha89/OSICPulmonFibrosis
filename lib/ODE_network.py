@@ -141,15 +141,15 @@ class ODE_Network(nn.Module):
         """Forward function"""
         # batch_size, channels, depth, width, height = scans.shape
         
-        x = F.relu(self.Conv01(scans)))
+        x = F.relu(self.Conv01(scans))
         # x = self.dropout5(x) #ALEX
-        x = F.relu(self.Conv02(x)))
+        x = F.relu(self.Conv02(x))
         # x = self.dropout5(x) #ALEX
 
         interm0 = self.reduce0(x)
         x = self.pool0(x)
 
-        x = F.relu((self.Conv11(x))
+        x = F.relu(self.Conv11(x))
         # x = self.dropout5(x) #ALEX
         x = F.relu(self.Conv12(x))
         # x = self.dropout5(x) #ALEX
