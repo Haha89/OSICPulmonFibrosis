@@ -7,8 +7,6 @@ from random import sample
 from math import sqrt
 import torch
 import numpy as np
-import matplotlib.pyplot as plt
-import pydicom
 import pandas as pd
 from pickle import dump, load
 
@@ -46,13 +44,6 @@ def get_scans_from_id(id_patient, train=True):
     if path_folder:
         return sorted(listdir(path_folder), key=lambda f: int(f.split(".")[0]))
     return []
-
-
-def crop_slice(s):
-    """Crop frames from slices, borders where only 0."""
-    s_cropped = s[~np.all(s == 0, axis=1)]
-    s_cropped = s_cropped[:, ~np.all(s_cropped == 0, axis=0)]
-    return s_cropped
 
 
 def get_3d_scan(id_patient):
