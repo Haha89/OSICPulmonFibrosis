@@ -35,24 +35,25 @@ if __name__ == "__main__":
     FOLD_LABELS = np.load("4-folds-split.npy")
     
     for k in range(NB_FOLDS):
+        print(f"Starting Fold {k}")
+        histo = torch.zeros((NUM_EPOCHS, 2))
         torch.cuda.empty_cache()
         indices_train, indices_test = train_test_indices(FOLD_LABELS, k)
+
         model = ODE_Network(1, 10, (256, 256, 32), 16, 32, 3, 64)
         model.to(DEVICE)
         optimiser = optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=5e-8)
     
         #####################
-        # Loding of data
+        # Data loading
         #####################
     
-        training_set = Dataset(PATH_DATA, indices_train)
+        training_set = Dataset(indices_train)
         training_generator = data.DataLoader(training_set, batch_size=1, shuffle=True)
-    
-        testing_set = Dataset(PATH_DATA, indices_test)
+
+        testing_set = Dataset(indices_test)
         testing_generator = data.DataLoader(testing_set, batch_size=1, shuffle=False)
         
-        histo = torch.zeros((NUM_EPOCHS, 2))
-    
         for epoch in range(NUM_EPOCHS):
             start_time = time.time()
             loss_train, loss_test = 0, 0

@@ -12,13 +12,14 @@ PATH_DATA = "../data/"
 
 class Dataset(data.Dataset):
     """Characterizes a dataset for PyTorch"""
-    def __init__(self, path, indices, train=True):
+    def __init__(self, indices, train=True):
         'Initialization'
         self.indices = indices
         self.train = train
-        folder = 'train/' if self.train else 'test/'
-        self.list_of_ids = np.array(listdir(path + folder))[self.indices]
-        self.data = get_data(self.train) #Train CSV File
+        self.data = get_data(self.train) #CSV File (Train or Test)
+        self.list_of_ids = self.data.Patient.unique()[self.indices]
+
+
 
     def __len__(self):
         'Denotes the total number of samples'

@@ -16,6 +16,7 @@ THICKNESS = 1
 SCAN_SIZE = [128, 128, 128]
 OFFSET_WEEKS = 5
 DEVICE = ("cuda" if torch.cuda.is_available() else "cpu")
+MAP_SMOKE = {"Ex-smoker":.5, "Currently smokes":1, "Never smoked":0}
 
 def get_id_folders(indice, train=True):
     """Return the ID of the patient for a specific index."""
@@ -58,9 +59,10 @@ def unormalize_fvc(data):
 
 def preprocessing_data(data, train=True):
     """Preprocess the csv file, add one hot encoder and normalization between [0,1]."""
-    data = pd.get_dummies(data, columns=['Sex', 'SmokingStatus'])
-    data["Percent"] = data["Percent"]/100.
     
+    data["Percent"] = data["Percent"]/100.
+    data["SmokeNum"] = data['SmokingStatus'].map(MAP_SMOKE)
+    data["Sex_Male"] = data['Sex'].map({"Male": 1, "Female": 0})
     if train:
         #Creation of dict containing min, max, mean, std of columns
         dict_postpro = {}
@@ -99,9 +101,7 @@ def filter_data(data, id_patient=None, indice=None):
     
     misc[:, 0] = torch.tensor(filtered_data.Age.values)[0]
     misc[:, 1] = torch.tensor(filtered_data.Sex_Male.values)[0]
-    misc[:, 2] = torch.tensor(0.5*np.array(filtered_data['SmokingStatus_Currently smokes']) +\
-        np.array(filtered_data['SmokingStatus_Ex-smoker']))[0]
-        
+    misc[:, 2] = torch.tensor(filtered_data.SmokeNum.values)[0]
     return misc, fvc, percent, weeks
 
 
