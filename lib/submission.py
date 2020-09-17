@@ -14,7 +14,7 @@ DEVICE = ("cuda" if torch.cuda.is_available() else "cpu")
 torch.cuda.empty_cache()
 
 test_df = utils.get_data(train=False)
-# sub = pd.read_csv('../data/sample_submission.csv')
+sub = pd.read_csv('../data/sample_submission.csv')
 
 checkpoint = torch.load('../data/model/model-0.pth')
 model = checkpoint['model']
