@@ -85,21 +85,26 @@ def unormalize_fvc(data):
     return(data["FVC"].min(), data["FVC"].max())
 
 
-def preprocessing_data(data):
+def preprocessing_data(data, train=True):
     """Preprocess the csv file, add one hot encoder and normalization between [0,1]."""
     data = pd.get_dummies(data, columns=['Sex', 'SmokingStatus'])
-    #Creation of dict containing min, max, mean, std of columns
-    dict_postpro = {}
-    
-    for col in ["FVC", "Age"]:
-        dict_postpro[col] = {"min": data[col].min(), "max": data[col].max()}
-        data[col] = (data[col] - data[col].min())/(data[col].max() - data[col].min())
-    dict_postpro["Weeks"] = {"mean": data.Weeks.mean(), "std": data.Weeks.std()}   
-    # data.Weeks = (data.Weeks - data.Weeks.mean())/data.Weeks.std()
     data["Percent"] = data["Percent"]/100.
     
-    with open('minmax.pickle', 'wb') as file_save:
-        dump(dict_postpro, file_save) #, protocol=pickle.HIGHEST_PROTOCOL
+    if train:
+        #Creation of dict containing min, max, mean, std of columns
+        dict_postpro = {}
+        for col in ["FVC", "Age"]:
+            dict_postpro[col] = {"min": data[col].min(), "max": data[col].max()}
+            data[col] = (data[col] - data[col].min())/(data[col].max() - data[col].min())
+        
+        with open('minmax.pickle', 'wb') as file_save:
+            dump(dict_postpro, file_save) #, protocol=pickle.HIGHEST_PROTOCOL
+            
+    else: #Testing, loads the data from the existing pickle file and normalizes FVC, Age
+        with open('minmax.pickle', 'rb') as file_save:
+            dictio = load(file_save)
+        for col in ["FVC", "Age"]:
+            data[col] = (data[col] - dictio[col]["min"])/(dictio[col]["max"] - dictio[col]["min"])
     return data
 
 
@@ -116,19 +121,11 @@ def filter_data(data, id_patient=None, indice=None):
     weeks = torch.zeros((140))
     misc = torch.zeros((140, 3))
       
-    with open('minmax.pickle', 'rb') as minmax_file:
-        dict_extremum = load(minmax_file)
-        
-    MEAN_week, STD_week = dict_extremum['Weeks']["mean"], dict_extremum['Weeks']["std"]
-    postpro_weeks = week_val # (week_val * STD_week + MEAN_week).astype('int') MODIF ALEX 03/9
-    postpro_min, postpro_max = np.min(postpro_weeks) + OFFSET_WEEKS, np.max(postpro_weeks) + OFFSET_WEEKS
-    
-    for i, week in enumerate(postpro_weeks):
+    for i, week in enumerate(week_val):
         fvc[week + OFFSET_WEEKS] = filtered_data.FVC.values[i]
         percent[week + OFFSET_WEEKS] = filtered_data.Percent.values[i]
         weeks[week + OFFSET_WEEKS] = week + OFFSET_WEEKS
     
-    #weeks[postpro_min:postpro_max] = torch.tensor(week_val)[0]
     misc[:, 0] = torch.tensor(filtered_data.Age.values)[0]
     misc[:, 1] = torch.tensor(filtered_data.Sex_Male.values)[0]
     misc[:, 2] = torch.tensor(0.5*np.array(filtered_data['SmokingStatus_Currently smokes']) +\
