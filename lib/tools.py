@@ -17,32 +17,32 @@ PIXEL_SPACING = 0.8
 THICKNESS = 1
 SCAN_SIZE = [128, 128, 128]
 OFFSET_WEEKS = 5
-
 DEVICE = ("cuda" if torch.cuda.is_available() else "cpu")
 
-
-def get_id_folders(indice):
+def get_id_folders(indice, train=True):
     """Return the ID of the patient for a specific index."""
+    folder = "train/" if train else "test/"
     try:
-        return listdir(PATH_DATA + "train/")[indice]
+        return listdir(PATH_DATA + folder)[indice]
     except:
         print(f"Error for indice {indice}")
-        return listdir(PATH_DATA + "train/")[0]
+        return listdir(PATH_DATA + folder)[0]
 
 
-def get_path_id(id_patient):
+def get_path_id(id_patient, train=True):
     """Returns the path of the folder containing the patient ID CT scans.
     Notifies if the path is not found."""
-    path_folder = f"{PATH_DATA}train/{id_patient}"
+    folder = "train/" if train else "test/"
+    path_folder = PATH_DATA + folder + id_patient
     if path.isdir(path_folder):
         return path_folder
     print(f"Could not find the folder for patient: {id_patient}")
     return None
 
 
-def get_scans_from_id(id_patient):
+def get_scans_from_id(id_patient, train=True):
     """Returns an ordered list of CT scans filenames from the id_patient."""
-    path_folder = get_path_id(id_patient)
+    path_folder = get_path_id(id_patient, train)
     if path_folder:
         return sorted(listdir(path_folder), key=lambda f: int(f.split(".")[0]))
     return []
@@ -115,9 +115,7 @@ def filter_data(data, id_patient=None, indice=None):
     percent = torch.zeros((140, 1)) #Avant (140)
     weeks = torch.zeros((140))
     misc = torch.zeros((140, 3))
-    
-    # minweek, maxweek = np.min(week_val)+5,  np.max(week_val)+5
-    
+      
     with open('minmax.pickle', 'rb') as minmax_file:
         dict_extremum = load(minmax_file)
         
@@ -129,32 +127,20 @@ def filter_data(data, id_patient=None, indice=None):
         fvc[week + OFFSET_WEEKS] = filtered_data.FVC.values[i]
         percent[week + OFFSET_WEEKS] = filtered_data.Percent.values[i]
         weeks[week + OFFSET_WEEKS] = week + OFFSET_WEEKS
-
-
+    
     #weeks[postpro_min:postpro_max] = torch.tensor(week_val)[0]
-    misc[postpro_min:postpro_max, 0] = torch.tensor(filtered_data.Age.values)[0]
-    misc[postpro_min:postpro_max, 1] = torch.tensor(filtered_data.Sex_Male.values)[0]
-    misc[postpro_min:postpro_max, 2] = torch.tensor(0.5*np.array(filtered_data['SmokingStatus_Currently smokes']) +\
+    misc[:, 0] = torch.tensor(filtered_data.Age.values)[0]
+    misc[:, 1] = torch.tensor(filtered_data.Sex_Male.values)[0]
+    misc[:, 2] = torch.tensor(0.5*np.array(filtered_data['SmokingStatus_Currently smokes']) +\
         np.array(filtered_data['SmokingStatus_Ex-smoker']))[0]
         
-        
-    # for i, week in enumerate(week_val):
-    #     fvc[week+5] = filtered_data.FVC.values[i]
-    #     percent[week+5] = filtered_data.Percent.values[i]
-        
-    # weeks[minweek:maxweek] = torch.arange(minweek,maxweek)
-    # misc[minweek:maxweek, 0] = torch.tensor(filtered_data.Age.values)[0]
-    # misc[minweek:maxweek, 1] = torch.tensor(filtered_data.Sex_Male.values)[0]
-    # misc[minweek:maxweek, 2] = torch.tensor(0.5*np.array(filtered_data['SmokingStatus_Currently smokes']) +\
-    #     np.array(filtered_data['SmokingStatus_Ex-smoker']))[0]    
     return misc, fvc, percent, weeks
 
 
-def get_data():
+def get_data(train=True):
     """Return the content proprocessed on the train.csv file (containing patient data)."""
-    raw_data = pd.read_csv(PATH_DATA + 'train.csv')
-    #mini, maxi = unormalize_fvc(raw_data)
-    #np.save("minmax",np.array([mini,maxi]))
+    file = "train" if train else "test"
+    raw_data = pd.read_csv(PATH_DATA + file + '.csv')
     return preprocessing_data(raw_data)
 
 
@@ -198,14 +184,13 @@ def laplace_log_likelihood(actual_fvc, predicted_fvc, confidence, mask):
     """
     Calculates the modified Laplace Log Likelihood score for this competition.
     """
-    std_min = torch.tensor([70.]).to(DEVICE)
-    delta_max = torch.tensor([1000.]).to(DEVICE)
+    std_min = torch.tensor([70.]).cuda()
+    delta_max = torch.tensor([1000.]).cuda()
     std_clipped = torch.max(confidence, std_min)
     delta = torch.min(torch.abs(actual_fvc - predicted_fvc), delta_max)
     metric = (- sqrt(2) * delta / std_clipped - torch.log(sqrt(2) * std_clipped))*mask
     metric = metric.sum()/mask.sum()
     return -metric
-
 
 
 def ode_laplace_log_likelihood(actual_fvc, predicted_fvc, confidence, epoch, epoch_max):
@@ -221,4 +206,3 @@ def ode_laplace_log_likelihood(actual_fvc, predicted_fvc, confidence, epoch, epo
         
     metric = (- sqrt(2) * delta / std_clipped - torch.log(sqrt(2) * std_clipped))
     return -metric.mean()
-
