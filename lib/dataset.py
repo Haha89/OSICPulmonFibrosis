@@ -6,17 +6,19 @@ from os import listdir
 import torch
 import numpy as np
 from torch.utils import data
-from tools import get_data, filter_data, get_3d_scan
+from utils import get_data, filter_data, get_3d_scan
 
 PATH_DATA = "../data/"
 
 class Dataset(data.Dataset):
     """Characterizes a dataset for PyTorch"""
-    def __init__(self, path, indices):
+    def __init__(self, path, indices, train=True):
         'Initialization'
         self.indices = indices
-        self.list_of_ids = np.array(listdir(path + 'train/'))[self.indices]
-        self.data = get_data() #Train CSV File
+        self.train = train
+        folder = 'train/' if self.train else 'test/'
+        self.list_of_ids = np.array(listdir(path + folder))[self.indices]
+        self.data = get_data(self.train) #Train CSV File
 
     def __len__(self):
         'Denotes the total number of samples'

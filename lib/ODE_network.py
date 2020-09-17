@@ -140,64 +140,42 @@ class ODE_Network(nn.Module):
     def forward(self, scans, misc, fvc, percent, weeks):
         """Forward function"""
         # batch_size, channels, depth, width, height = scans.shape
-        
         x = F.relu(self.bn01(self.Conv01(scans)))
-        # x = self.dropout5(x) #ALEX
         x = F.relu(self.bn02(self.Conv02(x)))
-        # x = self.dropout5(x) #ALEX
 
         interm0 = self.reduce0(x)
         x = self.pool0(x)
-
         x = F.relu(self.bn11(self.Conv11(x)))
-        # x = self.dropout5(x) #ALEX
         x = F.relu(self.bn12(self.Conv12(x)))
-        # x = self.dropout5(x) #ALEX
 
         interm1 = self.reduce1(x)
         x = self.pool1(x)
-
         x = F.relu(self.bn21(self.Conv21(x)))
-        # x = self.dropout5(x) #ALEX
         x = F.relu(self.bn22(self.Conv22(x)))
-        # x = self.dropout5(x) #ALEX
 
         interm2 = self.reduce2(x)
         x = self.pool2(x)
-
         x = F.relu(self.bn31(self.Conv31(x)))
         x = F.relu(self.bn32(self.Conv32(x)))
 
         interm3 = self.reduce3(x)
         x = self.pool3(x)
-        
-        # x = self.dropout(x) #ALEX
         x = F.relu(self.bn41(self.Conv41(x)))
-        # x = self.dropout(x)
         x = F.relu(self.bn42(self.Conv42(x)))
+        
         x = torch.cat((x, interm0, interm1, interm2, interm3), dim=1)
         
         batch_size, nb_features, depth, width, height = x.shape
         x = x.view(batch_size, -1)
-        # x = self.dropout(x)
         x = F.relu(self.postpross1(x))
-        # x = self.dropout(x)
         #x = F.relu(self.postpross2(x))
         outputs_scan = self.out(x)
         
         evolution = torch.cat((outputs_scan, misc, fvc, percent), -1)
-        # evolution = self.dropout(evolution)
         evolution = F.relu(self.data_process1(evolution))
-        # evolution = self.dropout(evolution) 
         # evolution = F.relu(self.data_process2(evolution))
-        latent = odeint(self.func,evolution, weeks.squeeze(0)).permute(1,0,2)
-                
-        # evolution = self.dropout(latent)
-        evolution = F.relu(self.decode1(latent))
-        # evolution = self.dropout(evolution)
-        output = self.decode2(evolution)
         
-        # output[:,:,0] = nn.Sigmoid()(output[:,:,0])
-        # output[:,:,1] = nn.Sigmoid()(output[:,:,1])
-        # output = torch.sigmoid(output)
+        latent = odeint(self.func,evolution, weeks.squeeze(0)).permute(1,0,2)
+        evolution = F.relu(self.decode1(latent))
+        output = self.decode2(evolution)
         return nn.Sigmoid()(output)

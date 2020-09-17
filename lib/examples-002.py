@@ -5,7 +5,7 @@
 import os, sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from tools import get_data, filter_data
+from utils import get_data, filter_data
 
 PREPROC = get_data()
 ID_PATIENT = "ID00026637202179561894768"

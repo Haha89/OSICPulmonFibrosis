@@ -7,7 +7,7 @@ from os import scandir
 import pandas as  pd
 import matplotlib.pyplot as plt
 import pydicom
-import tools
+import utils
 
 PATH_DATA = "../data/"
 
@@ -44,11 +44,11 @@ resized_list, brand = [], []
 
 tochi = 0
 for id_patient in subfolders:
-    scans = tools.get_scans_from_id(id_patient)
+    scans = utils.get_scans_from_id(id_patient)
     nb_tranches.append(len(scans))
     
     for scan in scans:
-        data = pydicom.dcmread(f"{tools.get_path_id(id_patient)}/{scan}")
+        data = pydicom.dcmread(f"{utils.get_path_id(id_patient)}/{scan}")
         nb_rows.append(data.Rows)
         nb_col.append(data.Columns)
         spacing.append(data.PixelSpacing)
