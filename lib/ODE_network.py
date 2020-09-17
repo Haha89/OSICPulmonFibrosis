@@ -59,8 +59,8 @@ class ODE_Network(nn.Module):
                                 self.input_dim*self.multiplicator,
                                 kernel_size=(3, 3, 3), padding=(1, 1, 1))
 
-        #self.bn01 = nn.BatchNorm3d(self.input_dim*self.multiplicator)
-        #self.bn02 = nn.BatchNorm3d(self.input_dim*self.multiplicator)
+        self.bn01 = nn.BatchNorm3d(self.input_dim*self.multiplicator)
+        self.bn02 = nn.BatchNorm3d(self.input_dim*self.multiplicator)
 
         self.reduce0 = nn.MaxPool3d(kernel_size=(16, 16, 16))
         self.pool0 = nn.MaxPool3d(kernel_size=(2, 2, 2))
@@ -73,8 +73,8 @@ class ODE_Network(nn.Module):
                                 self.input_dim*self.multiplicator*2,
                                 kernel_size=(3, 3, 3), padding=(1, 1, 1))
 
-        #self.bn11 = nn.BatchNorm3d(self.input_dim*self.multiplicator*2)
-        #self.bn12 = nn.BatchNorm3d(self.input_dim*self.multiplicator*2)
+        self.bn11 = nn.BatchNorm3d(self.input_dim*self.multiplicator*2)
+        self.bn12 = nn.BatchNorm3d(self.input_dim*self.multiplicator*2)
 
         self.reduce1 = nn.MaxPool3d(kernel_size=(8, 8, 8))
         self.pool1 = nn.MaxPool3d(kernel_size=(2, 2, 2))
@@ -91,8 +91,8 @@ class ODE_Network(nn.Module):
         self.reduce2 = nn.MaxPool3d(kernel_size=(4, 4, 4))
         self.pool2 = nn.MaxPool3d(kernel_size=(2, 2, 2))
 
-        #self.bn21 = nn.BatchNorm3d(self.input_dim*self.multiplicator*4)
-        #self.bn22 = nn.BatchNorm3d(self.input_dim*self.multiplicator*4)
+        self.bn21 = nn.BatchNorm3d(self.input_dim*self.multiplicator*4)
+        self.bn22 = nn.BatchNorm3d(self.input_dim*self.multiplicator*4)
 
         # Define the 3D convolutionnal layers 64x64
         self.Conv31 = nn.Conv3d(self.input_dim*self.multiplicator*4,
@@ -102,8 +102,8 @@ class ODE_Network(nn.Module):
                                 self.input_dim*self.multiplicator*8,
                                 kernel_size=(3, 3, 3), padding=(1, 1, 1))
 
-        #self.bn31 = nn.BatchNorm3d(self.input_dim*self.multiplicator*8)
-        #self.bn32 = nn.BatchNorm3d(self.input_dim*self.multiplicator*8)
+        self.bn31 = nn.BatchNorm3d(self.input_dim*self.multiplicator*8)
+        self.bn32 = nn.BatchNorm3d(self.input_dim*self.multiplicator*8)
 
         self.reduce3 = nn.MaxPool3d(kernel_size=(2, 2, 2))
         self.pool3 = nn.MaxPool3d(kernel_size=(2, 2, 2))
@@ -117,8 +117,8 @@ class ODE_Network(nn.Module):
                                 self.input_dim*self.multiplicator*16,
                                 kernel_size=(3, 3, 3), padding=(1, 1, 1))
 
-        #self.bn41 = nn.BatchNorm3d(self.input_dim*self.multiplicator*16)
-        #self.bn42 = nn.BatchNorm3d(self.input_dim*self.multiplicator*16)
+        self.bn41 = nn.BatchNorm3d(self.input_dim*self.multiplicator*16)
+        self.bn42 = nn.BatchNorm3d(self.input_dim*self.multiplicator*16)
 
 
        # Post_processing
@@ -131,8 +131,8 @@ class ODE_Network(nn.Module):
                                         self.output_dim)
         # self.data_process2 = nn.Linear(self.hidden_dim_linear,
         #                                 self.output_dim)
-        # self.decode1 = nn.Linear(self.output_dim,
-        #                                 self.hidden_dim_linear)
+        self.decode1 = nn.Linear(self.output_dim,
+                                        self.output_dim)
         self.decode2 = nn.Linear(self.output_dim, 2) 
 
 
@@ -141,40 +141,40 @@ class ODE_Network(nn.Module):
         """Forward function"""
         # batch_size, channels, depth, width, height = scans.shape
         
-        x = F.relu(self.Conv01(scans))
+        x = F.relu(self.bn01(self.Conv01(scans)))
         # x = self.dropout5(x) #ALEX
-        x = F.relu(self.Conv02(x))
+        x = F.relu(self.bn02(self.Conv02(x)))
         # x = self.dropout5(x) #ALEX
 
         interm0 = self.reduce0(x)
         x = self.pool0(x)
 
-        x = F.relu(self.Conv11(x))
+        x = F.relu(self.bn11(self.Conv11(x)))
         # x = self.dropout5(x) #ALEX
-        x = F.relu(self.Conv12(x))
+        x = F.relu(self.bn12(self.Conv12(x)))
         # x = self.dropout5(x) #ALEX
 
         interm1 = self.reduce1(x)
         x = self.pool1(x)
 
-        x = F.relu(self.Conv21(x))
+        x = F.relu(self.bn21(self.Conv21(x)))
         # x = self.dropout5(x) #ALEX
-        x = F.relu(self.Conv22(x))
+        x = F.relu(self.bn22(self.Conv22(x)))
         # x = self.dropout5(x) #ALEX
 
         interm2 = self.reduce2(x)
         x = self.pool2(x)
 
-        x = F.relu(self.Conv31(x))
-        x = F.relu(self.Conv32(x))
+        x = F.relu(self.bn31(self.Conv31(x)))
+        x = F.relu(self.bn32(self.Conv32(x)))
 
         interm3 = self.reduce3(x)
         x = self.pool3(x)
         
         # x = self.dropout(x) #ALEX
-        x = F.relu(self.Conv41(x))
+        x = F.relu(self.bn41(self.Conv41(x)))
         # x = self.dropout(x)
-        x = F.relu(self.Conv42(x))
+        x = F.relu(self.bn42(self.Conv42(x)))
         x = torch.cat((x, interm0, interm1, interm2, interm3), dim=1)
         
         batch_size, nb_features, depth, width, height = x.shape
@@ -193,9 +193,9 @@ class ODE_Network(nn.Module):
         latent = odeint(self.func,evolution, weeks.squeeze(0)).permute(1,0,2)
                 
         # evolution = self.dropout(latent)
-        # evolution = F.relu(self.decode1(evolution))
+        evolution = F.relu(self.decode1(latent))
         # evolution = self.dropout(evolution)
-        output = self.decode2(latent)
+        output = self.decode2(evolution)
         
         # output[:,:,0] = nn.Sigmoid()(output[:,:,0])
         # output[:,:,1] = nn.Sigmoid()(output[:,:,1])
