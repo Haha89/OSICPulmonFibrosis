@@ -12,7 +12,7 @@ from torch.utils import data
 
 
 MIN_WEEK = -12
-MAX_WEEK = 130
+MAX_WEEK = 133
 DEVICE = ("cuda" if torch.cuda.is_available() else "cpu")
 torch.cuda.empty_cache()
 

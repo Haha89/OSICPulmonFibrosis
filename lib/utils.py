@@ -18,23 +18,23 @@ OFFSET_WEEKS = 5
 DEVICE = ("cuda" if torch.cuda.is_available() else "cpu")
 MAP_SMOKE = {"Ex-smoker":.5, "Currently smokes":1, "Never smoked":0}
 
-def get_id_folders(indice, train=True):
+def get_id_folders(indice, train=True, path_folder=PATH_DATA):
     """Return the ID of the patient for a specific index."""
     folder = "train/" if train else "test/"
     try:
-        return listdir(PATH_DATA + folder)[indice]
+        return listdir(path_folder + folder)[indice]
     except:
         print(f"Error for indice {indice}")
-        return listdir(PATH_DATA + folder)[0]
+        return listdir(path_folder + folder)[0]
 
 
-def get_path_id(id_patient, train=True):
+def get_path_id(id_patient, train=True, path_folder=PATH_DATA):
     """Returns the path of the folder containing the patient ID CT scans.
     Notifies if the path is not found."""
     folder = "train/" if train else "test/"
-    path_folder = PATH_DATA + folder + id_patient
-    if path.isdir(path_folder):
-        return path_folder
+    path_folder_ = path_folder + folder + id_patient
+    if path.isdir(path_folder_):
+        return path_folder_
     print(f"Could not find the folder for patient: {id_patient}")
     return None
 
@@ -47,9 +47,9 @@ def get_scans_from_id(id_patient, train=True):
     return []
 
 
-def get_3d_scan(id_patient):
+def get_3d_scan(id_patient, path_folder=PATH_DATA):
     """Load and returns the 3d array of id_patient."""
-    return np.load(f"{PATH_DATA}scans/{id_patient}.npy", allow_pickle=True)
+    return np.load(f"{path_folder}scans/{id_patient}.npy", allow_pickle=True)
 
 
 def unormalize_fvc(data):
@@ -81,10 +81,10 @@ def preprocessing_data(data, train=True):
     return data
 
 
-def filter_data(data, id_patient=None, indice=None):
+def filter_data(data, id_patient=None, indice=None, path_folder=PATH_DATA):
     """Return the data only for the id_patient."""
     if id_patient is None:
-        id_patient = get_id_folders(indice)
+        id_patient = get_id_folders(indice, path_folder=path_folder)
         
     filtered_data = data[data.Patient == id_patient]
     week_val = filtered_data.Weeks.values
@@ -105,18 +105,18 @@ def filter_data(data, id_patient=None, indice=None):
     return misc, fvc, percent, weeks
 
 
-def get_data(train=True):
+def get_data(train=True, path_folder=PATH_DATA):
     """Return the content proprocessed on the train.csv file (containing patient data)."""
     file = "train" if train else "test"
-    raw_data = pd.read_csv(PATH_DATA + file + '.csv')
+    raw_data = pd.read_csv(f"{path_folder}{file}.csv")
     return preprocessing_data(raw_data)
 
 
-def make_folds(nb_folds):
+def make_folds(nb_folds, path_folder = PATH_DATA):
     """Fonction qui permet de labeliser nos entrees de 0 a
     nb_folds pour k-fold cross validation """
 
-    batch_size = len(listdir(PATH_DATA + 'train/'))
+    batch_size = len(listdir(path_folder + 'train/'))
     subfolders = [i for i in range(batch_size)]
     #Chaque donnÃ©e Ã  un label
     fold_label = np.zeros(batch_size, dtype=int)
