@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from pickle import dump, load
 
-PATH_DATA = "../data/"  #"../input/osic-pulmonary-fibrosis-progression/"
+PATH_DATA = "../input/osic-pulmonary-fibrosis-progression/" # "../data/"
 PIXEL_SPACING = 0.8
 THICKNESS = 1
 SCAN_SIZE = [128, 128, 128]
