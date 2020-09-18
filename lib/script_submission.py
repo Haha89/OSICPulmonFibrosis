@@ -51,9 +51,6 @@ for i, (scans, misc, FVC, percent, weeks) in enumerate(testing_generator):
     percent = percent[:,ranger[0]]
     first_week = int(weeks[:, ranger[0]].cpu().detach().numpy()[0])
     weeks = torch.torch.from_numpy(np.arange(MIN_WEEK, MAX_WEEK+1)).float()
-    
-    print(weeks)
-    print(weeks-first_week)
     scans, misc = scans.to(DEVICE), misc.to(DEVICE)
     fvc, percent, weeks = fvc.to(DEVICE), percent.to(DEVICE), weeks.to(DEVICE)
     pred = model(scans, misc, fvc, percent, weeks-first_week)
@@ -63,8 +60,7 @@ for i, (scans, misc, FVC, percent, weeks) in enumerate(testing_generator):
     std = pred[:, :, 1]*500    
     goal = FVC[:,ranger]
     goal = unscale(goal).to(DEVICE)
-    mean = mean  + (goal[:,0]- mean[:,0])
-    
+    mean = mean  + (goal[:,0]- mean[:,first_week-MIN_WEEK])
     mean = mean.cpu().detach().numpy()[0]
     std = std.cpu().detach().numpy()[0]
     list_weeks = [test_df.Patient.unique()[i] + "_" + str(int(week.cpu().detach().numpy())) for week in weeks]
