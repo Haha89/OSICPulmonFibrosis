@@ -8,15 +8,16 @@ import numpy as np
 from torch.utils import data
 from utils import get_data, filter_data, get_3d_scan
 from scan_processing import process_3d_scan
+
 PATH_DATA = "../data/"
 
 class Dataset(data.Dataset):
     """Characterizes a dataset for PyTorch"""
-    def __init__(self, indices, train=True):
+    def __init__(self, indices, train=True, path_folder=PATH_DATA):
         'Initialization'
         self.indices = indices
         self.train = train
-        self.data = get_data(self.train) #CSV File (Train or Test)
+        self.data = get_data(train=self.train, path_folder=path_folder) #CSV File (Train or Test)
         self.list_of_ids = self.data.Patient.unique()[self.indices]
 
 
