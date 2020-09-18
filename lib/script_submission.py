@@ -49,10 +49,14 @@ for i, (scans, misc, FVC, percent, weeks) in enumerate(testing_generator):
     std = torch.ones_like(fvc)*.7
     fvc = torch.cat((fvc, std),1)
     percent = percent[:,ranger[0]]
+    first_week = int(weeks[:, ranger[0]].cpu().detach().numpy()[0])
     weeks = torch.torch.from_numpy(np.arange(MIN_WEEK, MAX_WEEK+1)).float()
+    
+    print(weeks)
+    print(weeks-first_week)
     scans, misc = scans.to(DEVICE), misc.to(DEVICE)
     fvc, percent, weeks = fvc.to(DEVICE), percent.to(DEVICE), weeks.to(DEVICE)
-    pred = model(scans, misc, fvc, percent, weeks)
+    pred = model(scans, misc, fvc, percent, weeks-first_week)
     
     #Deprocessing
     mean = unscale(pred[:, :, 0])
@@ -69,3 +73,4 @@ for i, (scans, misc, FVC, percent, weeks) in enumerate(testing_generator):
     sub = pd.concat([sub, df], axis=0)
     
 sub.to_csv("../data/submission.csv", index=False)
+print("Submission save")
