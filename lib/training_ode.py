@@ -60,9 +60,9 @@ if __name__ == "__main__":
             model.train()
 
             #TRAINING    
-            for scans, misc, FVC, percent, weeks, ranger in training_generator:
+            for scans, misc, FVC, percent, weeks in training_generator:
 
-                ranger = ranger[0]
+                ranger = np.where(weeks != 0)[1]
                 misc = misc[:,ranger[0],:].squeeze(1) #Dépend du m
                 fvc = FVC[:,ranger[0]]
                 std = torch.ones_like(fvc)*.7
