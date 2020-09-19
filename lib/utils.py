@@ -93,16 +93,16 @@ def filter_data(data, id_patient=None, indice=None, path_folder=PATH_DATA):
     percent = torch.zeros((140, 1)) #Avant (140)
     weeks = torch.zeros((140))
     misc = torch.zeros((140, 3))
-    ranger = torch.zeros(len(week_val))
+      
     for i, week in enumerate(week_val):
         fvc[week + OFFSET_WEEKS] = filtered_data.FVC.values[i]
         percent[week + OFFSET_WEEKS] = filtered_data.Percent.values[i]
         weeks[week + OFFSET_WEEKS] = week + OFFSET_WEEKS
-        ranger[i] = week + OFFSET_WEEKS
+    
     misc[:, 0] = torch.tensor(filtered_data.Age.values)[0]
     misc[:, 1] = torch.tensor(filtered_data.Sex_Male.values)[0]
     misc[:, 2] = torch.tensor(filtered_data.SmokeNum.values)[0]
-    return misc, fvc, percent, weeks, ranger
+    return misc, fvc, percent, weeks
 
 
 def get_data(train=True, path_folder=PATH_DATA):
