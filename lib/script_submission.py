@@ -41,9 +41,9 @@ testing_set = Dataset(a, train=False)
 testing_generator = data.DataLoader(testing_set, batch_size=1, shuffle=False)
 
 
-for i, (scans, misc, FVC, percent, weeks) in enumerate(testing_generator):
+for i, (scans, misc, FVC, percent, weeks, ranger) in enumerate(testing_generator):
     
-    ranger = np.where(weeks != 0)[1]
+    ranger = np.where(ranger != 0)[1]
     misc = misc[:,ranger[0],:].squeeze(1) #Dépend du m
     fvc = FVC[:,ranger[0]]
     std = torch.ones_like(fvc)*.7

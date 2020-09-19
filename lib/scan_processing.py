@@ -17,7 +17,7 @@ SCAN_SIZE = [32, 256, 256] #z, x, y
 clip_bounds = (-1000, 200)
 
 
-def create_3d_scan(id, train=True):
+def create_3d_scan(id_patient, train=True):
     """Return a 3d matrix of the different slices (ct scans) of a patient,
     the list of slice heights and widths. 
     Heterogeneity in the dataset requires to return 
@@ -25,8 +25,9 @@ def create_3d_scan(id, train=True):
      - otherwise SpacingBetweenSlices,
      - otherwise the SliceThickness"""
     
-    path_data = get_path_id(id, train)
-    filelist = get_scans_from_id(id, train)
+    path_data = get_path_id(id_patient, train)
+    filelist = get_scans_from_id(id_patient, train)
+    if len(filelist)==0: print("No scans for ", id_patient)
     slice_agg, spacing, y_pos = [], 0., []
     try:
         for file in filelist:
