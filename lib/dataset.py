@@ -28,6 +28,6 @@ class Dataset(data.Dataset):
         else: #Testing dataset, create 3d array on the fly
             scan = process_3d_scan(self.list_of_ids[index], False)
             
-        misc, fvc, percent,weeks,ranger = filter_data(self.data, self.list_of_ids[index])
+        misc, fvc, percent,weeks = filter_data(self.data, self.list_of_ids[index])
         scan = torch.tensor(scan).unsqueeze(0)
-        return (scan.float(), misc.float(), fvc.float(), percent.float(), weeks.float(), ranger.int())
+        return (scan.float(), misc.float(), fvc.float(), percent.float(), weeks.float())
