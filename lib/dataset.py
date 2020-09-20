@@ -6,7 +6,7 @@ import torch
 from torch.utils import data
 from utils import get_data, filter_data, get_3d_scan
 from scan_processing import process_3d_scan
-
+import numpy as np
 
 class Dataset(data.Dataset):
     """Characterizes a dataset for PyTorch"""
@@ -23,11 +23,16 @@ class Dataset(data.Dataset):
 
     def __getitem__(self, index):
         'Generates one sample of data'
-        if self.train:
-            scan = get_3d_scan(self.list_of_ids[index])
-        else: #Testing dataset, create 3d array on the fly
-            scan = process_3d_scan(self.list_of_ids[index], False)
-            
+        
+        try:
+            if self.train:
+                scan = get_3d_scan(self.list_of_ids[index])
+            else:
+                scan = process_3d_scan(self.list_of_ids[index], False)
+        except:
+            print("Error caught in Dataset. Returning zeros")
+            scan = np.zeros((32, 256, 256))   
+        # scan = np.zeros((32, 256, 256))      
         misc, fvc, percent,weeks, ranger = filter_data(self.data, self.list_of_ids[index])
         scan = torch.tensor(scan).unsqueeze(0)
         return (scan.float(), misc.float(), fvc.float(), percent.float(), weeks.float(), ranger.int())

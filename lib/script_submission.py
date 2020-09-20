@@ -68,5 +68,5 @@ for i, (scans, misc, FVC, percent, weeks, ranger) in enumerate(testing_generator
     df = pd.DataFrame({"Patient_Week": list_weeks, "FVC":mean, "Confidence":std})
     sub = pd.concat([sub, df], axis=0)
     
-sub.to_csv("../data/submission.csv", index=False)
+sub.round(0).to_csv("../data/submission.csv", index=False)
 print("Submission save")

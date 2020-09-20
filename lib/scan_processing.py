@@ -29,37 +29,43 @@ def create_3d_scan(id_patient, train=True):
     filelist = get_scans_from_id(id_patient, train)
     if len(filelist)==0: print("No scans for ", id_patient)
     slice_agg, spacing, y_pos = [], 0., []
-    try:
-        for file in filelist:
-            data = dcmread(f"{path_data}/{file}")
-            slice_agg.append(data.pixel_array)
-            spacing = data.PixelSpacing
+    
+    for file in filelist:
+        data = dcmread(f"{path_data}/{file}")
+        slice_agg.append(data.pixel_array)
+        spacing = data.PixelSpacing
+        if "SliceLocation" in data:
             y_pos.append(data.SliceLocation)
-       
+            
+    if len(y_pos)>1:   
         space_z = abs(float(y_pos[1])-float(y_pos[0]))
         return np.array(slice_agg), spacing, 1 if space_z == 0 else space_z, data
     
-    except :
-        for file in filelist:
-            data = dcmread(f"{path_data}/{file}")
-            slice_agg.append(data.pixel_array)
-            spacing = data.PixelSpacing
-        try:    
+    else:
+        if "SpacingBetweenSlices" in data:
             return np.array(slice_agg), spacing, data.SpacingBetweenSlices, data
-        except:
+        else:
             return np.array(slice_agg), spacing, data.SliceThickness, data
 
 
 def rescale(sample, bounds=(-1000, -200)):
     image, data = sample['image'], sample['metadata']
-    if data.PatientID == "ID00132637202222178761324":
-        intercept = 2048
-    elif data.PatientID == "ID00128637202219474716089":
-        intercept = 1024  
-    else:
-        intercept = data.RescaleIntercept
-    slope = data.RescaleSlope
     
+    try:
+        if data.PatientID == "ID00132637202222178761324":
+            intercept = 2048
+        elif data.PatientID == "ID00128637202219474716089":
+            intercept = 1024  
+        else:
+            intercept = data.RescaleIntercept
+        
+    except:
+        if data.Manufacturer == "TOSHIBA":
+            intercept = 2048
+        else:
+            intercept = 1024
+            
+    slope = data.RescaleSlope
     image = (image * slope + intercept).astype(np.int16)
     image[image < min(bounds)] = min(bounds)
     image[image > max(bounds)] = max(bounds)
@@ -125,6 +131,10 @@ def seperate_lungs(image, min_hu, iterations, threshold =-700):
     sobel_filtered_dx = ndimage.sobel(image, 1)
     sobel_filtered_dy = ndimage.sobel(image, 0)
     sobel_gradient = np.hypot(sobel_filtered_dx, sobel_filtered_dy)
+    
+    if np.max(sobel_gradient) == 0:
+        return image
+        
     sobel_gradient *= 255.0 / np.max(sobel_gradient)
     watershed = segmentation.watershed(sobel_gradient, marker_watershed)
     outline = ndimage.morphological_gradient(watershed, size=(3,3))
@@ -210,8 +220,8 @@ def resize(matrix, spacing, space_z):
 
 def process_3d_scan(id_patient, train=True):
     """Returns the 3d scan array of a patient,
-    as a 128*128*128 array, values between 0 and 1"""
-
+    as a 32*256*256 array, values between 0 and 1"""
+    
     matrix, spacing, space_z, metadata = create_3d_scan(id_patient, train)
     sample = {'image': matrix, 'metadata': metadata} 
     sample = crop(sample)
@@ -230,6 +240,7 @@ def process_3d_scan(id_patient, train=True):
         min_matrix = np.min(processed_mat) #Normalization
         processed_mat = (processed_mat - min_matrix)/(np.max(processed_mat) - min_matrix)
         return processed_mat
+   
     
     
 def multi_slice_viewer(matrix_3d, title=None):

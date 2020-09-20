@@ -11,9 +11,7 @@ import utils
 
 PATH_DATA = "../data/"
 
-train = pd.read_csv(PATH_DATA + 'train.csv')
-test = pd.read_csv(PATH_DATA + 'train.csv')
-df = pd.concat([train, test])
+df = pd.read_csv(PATH_DATA + 'train.csv')
 
 # # #Generation of a HTML file with graphs and analysis
 # import pandas_profiling as pdp
@@ -41,6 +39,7 @@ subfolders = [f.name for f in scandir(PATH_DATA + "train") if f.is_dir()]
 nb_tranches, spacing = [], []
 nb_rows, nb_col = [], []
 resized_list, brand = [], []
+intercept = []
 
 tochi = 0
 for id_patient in subfolders:
@@ -52,14 +51,8 @@ for id_patient in subfolders:
         nb_rows.append(data.Rows)
         nb_col.append(data.Columns)
         spacing.append(data.PixelSpacing)
+        intercept.append(data.RescaleIntercept)
         
-    if data.Manufacturer == 'TOSHIBA':
-        tochi += 1
-        print(id_patient)
-        # brand.append(data.RescaleIntercept)
-   
-
-
 
 def CountFrequency(my_list):
     """ Transfroms a list to a dictionnary where:
@@ -111,13 +104,13 @@ def CountFrequency(my_list):
 # Quels sont les marques de scanneurs
 # =============================================================================
 
-print("Details on number of brands")
-rep_col = CountFrequency(brand)
-print(rep_col)
-plt.figure(figsize=(20, 10))
-plt.bar(rep_col.keys(), height=rep_col.values())
-plt.title("Repartition of ct-scans widths")
-plt.show()
+# print("Details on number of brands")
+# rep_col = CountFrequency(brand)
+# print(rep_col)
+# plt.figure(figsize=(20, 10))
+# plt.bar(rep_col.keys(), height=rep_col.values())
+# plt.title("Repartition of ct-scans widths")
+# plt.show()
 
 
 # # =============================================================================
@@ -133,3 +126,16 @@ plt.show()
 #     else:
 #         freq[key] = 1
 # print(freq)
+
+
+# =============================================================================
+# Quels sont les RescaleIntercept
+# =============================================================================
+
+print("Details on number of brands")
+rep_col = CountFrequency(intercept)
+print(rep_col)
+plt.figure(figsize=(20, 10))
+plt.bar(rep_col.keys(), height=rep_col.values())
+plt.title("Repartition of ct-scans widths")
+plt.show()

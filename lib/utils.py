@@ -10,10 +10,7 @@ import numpy as np
 import pandas as pd
 from pickle import dump, load
 
-PATH_DATA =  "../data/" #"../input/osic-pulmonary-fibrosis-progression/" #
-PIXEL_SPACING = 0.8
-THICKNESS = 1
-SCAN_SIZE = [128, 128, 128]
+PATH_DATA =  "../input/osic-pulmonary-fibrosis-progression/" #"../data/"  #
 OFFSET_WEEKS = 5
 DEVICE = ("cuda" if torch.cuda.is_available() else "cpu")
 MAP_SMOKE = {"Ex-smoker":.5, "Currently smokes":1, "Never smoked":0}
@@ -98,7 +95,7 @@ def filter_data(data, id_patient=None, indice=None, path_folder=PATH_DATA):
     for i, week in enumerate(week_val):
         fvc[week + OFFSET_WEEKS] = filtered_data.FVC.values[i]
         percent[week + OFFSET_WEEKS] = filtered_data.Percent.values[i]
-        weeks[week + OFFSET_WEEKS] = week # + OFFSET_WEEKS Alex 19/9
+        weeks[week + OFFSET_WEEKS] = week + OFFSET_WEEKS #Alex 19/9
         ranger[week + OFFSET_WEEKS] = 1
     misc[:, 0] = torch.tensor(filtered_data.Age.values)[0]
     misc[:, 1] = torch.tensor(filtered_data.Sex_Male.values)[0]
