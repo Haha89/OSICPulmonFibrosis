@@ -14,7 +14,7 @@ import scan_processing
 # Display the list of CT scans of a patient
 # =============================================================================
 
-ID_PATIENT = "ID00132637202222178761324"
+ID_PATIENT = "ID00010637202177584971671"
 scan_filenames = utils.get_scans_from_id(ID_PATIENT)
 print(f"List of CT scans found for id : {id}")
 print(scan_filenames)
@@ -31,7 +31,7 @@ print("Content of the DCM file")
 # =============================================================================
 # # Get the numpy 3d array already preprocessed
 # # =============================================================================
-MATRIX = utils.get_3d_scan(ID_PATIENT)
+MATRIX = scan_processing.process_3d_scan(ID_PATIENT)
 
 # # =============================================================================
 # # Annimation of the 3d matrix slice by slice (run from console)

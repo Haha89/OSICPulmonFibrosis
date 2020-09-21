@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from pickle import dump, load
 
-PATH_DATA =  "../input/osic-pulmonary-fibrosis-progression/" #"../data/"  #
+PATH_DATA = "../input/osic-pulmonary-fibrosis-progression/" #"../data/"  #
 OFFSET_WEEKS = 5
 DEVICE = ("cuda" if torch.cuda.is_available() else "cpu")
 MAP_SMOKE = {"Ex-smoker":.5, "Currently smokes":1, "Never smoked":0}
@@ -159,19 +159,6 @@ def train_test_indices(fold_label, nb_fold):
     indices_test_1 = np.where((fold_label == nb_fold))[0]
     indices_test = np.array([x for x in indices_test_1 if fold_label[x] <5])
     return (indices_train, indices_test)
-
-
-def laplace_log_likelihood(actual_fvc, predicted_fvc, confidence, mask):
-    """
-    Calculates the modified Laplace Log Likelihood score for this competition.
-    """
-    std_min = torch.tensor([70.]).cuda()
-    delta_max = torch.tensor([1000.]).cuda()
-    std_clipped = torch.max(confidence, std_min)
-    delta = torch.min(torch.abs(actual_fvc - predicted_fvc), delta_max)
-    metric = (- sqrt(2) * delta / std_clipped - torch.log(sqrt(2) * std_clipped))*mask
-    metric = metric.sum()/mask.sum()
-    return -metric
 
 
 def ode_laplace_log_likelihood(actual_fvc, predicted_fvc, confidence, epoch, epoch_max):
