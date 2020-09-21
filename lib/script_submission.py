@@ -26,7 +26,7 @@ model = model.to(DEVICE)
 model.load_state_dict(checkpoint['state_dict'])
 
 
-with open('minmax.pickle', 'rb') as minmax_file:
+with open('../data/model/minmax.pickle', 'rb') as minmax_file:
     min_max = load(minmax_file)['FVC']
 
 unscale = lambda x: x*(min_max["max"] - min_max["min"]) + min_max["min"]

@@ -71,7 +71,7 @@ def preprocessing_data(data, train=True, path_file=PATH_DATA):
             dump(dict_postpro, file_save) #, protocol=pickle.HIGHEST_PROTOCOL
             
     else: #Testing, loads the data from the existing pickle file and normalizes FVC, Age
-        with open(f'{PATH_DATA}model/minmax.pickle', 'rb') as file_save:
+        with open('../input/osic-pulmonary-fibrosis-progression/data/model/minmax.pickle', 'rb') as file_save:
             dictio = load(file_save)
 
         for col in ["FVC", "Age"]:
