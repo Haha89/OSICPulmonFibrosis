@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from pickle import dump, load
 
-PATH_DATA = "../input/osic-pulmonary-fibrosis-progression/" # "../data/"  #
+PATH_DATA =  "../data/"  #"../input/osic-pulmonary-fibrosis-progression/" #
 OFFSET_WEEKS = 5
 DEVICE = ("cuda" if torch.cuda.is_available() else "cpu")
 MAP_SMOKE = {"Ex-smoker":.5, "Currently smokes":1, "Never smoked":0}
@@ -54,7 +54,7 @@ def unormalize_fvc(data):
     return(data["FVC"].min(), data["FVC"].max())
 
 
-def preprocessing_data(data, train=True):
+def preprocessing_data(data, train=True, path_file=PATH_DATA):
     """Preprocess the csv file, add one hot encoder and normalization between [0,1]."""
     
     data["Percent"] = data["Percent"]/100.
@@ -67,11 +67,11 @@ def preprocessing_data(data, train=True):
             dict_postpro[col] = {"min": data[col].min(), "max": data[col].max()}
             data[col] = (data[col] - data[col].min())/(data[col].max() - data[col].min())
         
-        with open('minmax.pickle', 'wb') as file_save:
+        with open(f'{PATH_DATA}model/minmax.pickle', 'wb') as file_save:
             dump(dict_postpro, file_save) #, protocol=pickle.HIGHEST_PROTOCOL
             
     else: #Testing, loads the data from the existing pickle file and normalizes FVC, Age
-        with open('minmax.pickle', 'rb') as file_save:
+        with open(f'{PATH_DATA}model/minmax.pickle', 'rb') as file_save:
             dictio = load(file_save)
 
         for col in ["FVC", "Age"]:

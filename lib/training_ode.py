@@ -27,11 +27,7 @@ if __name__ == "__main__":
     for f in glob(f"{PATH_DATA}/histo-fold/histo-fold-*.pt"): #Removes existing histo-fold-X.pt
         remove(f)
 
-    with open('minmax.pickle', 'rb') as minmax_file:
-        dict_extremum = load(minmax_file)
-        
-    MINI_FVC = dict_extremum['FVC']["min"]
-    MAXI_FVC = dict_extremum['FVC']["max"]
+
     FOLD_LABELS = np.load("4-folds-split.npy")
     
     for k in range(NB_FOLDS):
@@ -54,6 +50,12 @@ if __name__ == "__main__":
         testing_set = Dataset(indices_test)
         testing_generator = data.DataLoader(testing_set, batch_size=1, shuffle=False)
         
+        with open(f'{PATH_DATA}model/minmax.pickle', 'rb') as minmax_file:
+            dict_extremum = load(minmax_file)
+        
+        MINI_FVC = dict_extremum['FVC']["min"]
+        MAXI_FVC = dict_extremum['FVC']["max"]
+    
         for epoch in range(NUM_EPOCHS):
             start_time = time.time()
             loss_train, loss_test = 0, 0
