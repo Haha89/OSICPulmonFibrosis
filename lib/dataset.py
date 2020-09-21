@@ -30,11 +30,11 @@ class Dataset(data.Dataset):
             return (scan.float(), misc.float(), fvc.float(), percent.float(), weeks.float(), ranger.int())
         
         else:
-            try:
-                scan = process_3d_scan(self.list_of_ids[index], False)
-            except:
-                print("Error caught in Dataset. Returning zeros")
-                scan = np.zeros((32, 256, 256))  
+            # try:
+            # scan = process_3d_scan(self.list_of_ids[index], False)
+            # except:
+            #     print("Error caught in Dataset. Returning zeros")
+            scan = np.zeros((32, 256, 256))  
                 
             misc, fvc, percent, weeks = filter_data(self.data, self.list_of_ids[index], train=False)
             scan = torch.tensor(scan).unsqueeze(0)

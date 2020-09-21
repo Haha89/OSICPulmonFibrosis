@@ -26,8 +26,7 @@ if __name__ == "__main__":
     
     for f in glob(f"{PATH_DATA}/histo-fold/histo-fold-*.pt"): #Removes existing histo-fold-X.pt
         remove(f)
-
-
+        
     FOLD_LABELS = np.load("4-folds-split.npy")
     
     for k in range(NB_FOLDS):

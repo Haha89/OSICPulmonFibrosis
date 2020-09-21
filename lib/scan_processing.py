@@ -227,19 +227,26 @@ def process_3d_scan(id_patient, train=True):
     sample = crop(sample)
     
     sample['image'] = resize(sample['image'], spacing, space_z)
-    sample_watershed = rescale(sample, bounds=clip_bounds)
-    
-    # multi_slice_viewer(sample_watershed['image'])
-    processed_mat = analyse(sample_watershed, min(clip_bounds), 1)['image']
-    
-    if np.min(processed_mat) - np.max(processed_mat) == 0: #Empty mask, return not modyfied
-        min_matrix = np.min(sample['image']) #Normalization
-        sample['image'] = (sample['image'] - min_matrix)/(np.max(sample['image']) - min_matrix)
+    #TESTING ALEX 21/09
+
+    if float(sample['image'].min()) - float(sample['image'].max()) == 0:
         return sample['image']
     else:
-        min_matrix = np.min(processed_mat) #Normalization
-        processed_mat = (processed_mat - min_matrix)/(np.max(processed_mat) - min_matrix)
-        return processed_mat
+        return (sample['image'] - np.min(sample['image']))/(np.max(sample['image']) - np.min(sample['image']))
+        
+    # sample_watershed = rescale(sample, bounds=clip_bounds)
+    
+    # # multi_slice_viewer(sample_watershed['image'])
+    # processed_mat = analyse(sample_watershed, min(clip_bounds), 1)['image']
+    
+    # if np.min(processed_mat) - np.max(processed_mat) == 0: #Empty mask, return not modyfied
+    #     min_matrix = np.min(sample['image']) #Normalization
+    #     sample['image'] = (sample['image'] - min_matrix)/(np.max(sample['image']) - min_matrix)
+    #     return sample['image']
+    # else:
+    #     min_matrix = np.min(processed_mat) #Normalization
+    #     processed_mat = (processed_mat - min_matrix)/(np.max(processed_mat) - min_matrix)
+    #     return processed_mat
    
     
     
