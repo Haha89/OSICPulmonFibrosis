@@ -51,19 +51,19 @@ def create_3d_scan(id_patient, train=True):
 def rescale(sample, bounds=(-1000, -200)):
     image, data = sample['image'], sample['metadata']
     
-    try:
-        if data.PatientID == "ID00132637202222178761324":
-            intercept = 2048
-        elif data.PatientID == "ID00128637202219474716089":
-            intercept = 1024  
-        else:
+
+    if data.PatientID == "ID00132637202222178761324":
+        intercept = 2048
+    elif data.PatientID == "ID00128637202219474716089":
+        intercept = 1024  
+    else:
+        if "RescaleIntercept" in data:
             intercept = data.RescaleIntercept
-        
-    except:
-        if data.Manufacturer == "TOSHIBA":
-            intercept = 2048
         else:
-            intercept = 1024
+            if data.Manufacturer == "TOSHIBA":
+                intercept = 2048
+            else:
+                intercept = 1024
             
     slope = data.RescaleSlope
     image = (image * slope + intercept).astype(np.int16)

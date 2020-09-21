@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from pickle import dump, load
 
-PATH_DATA =  "../input/osic-pulmonary-fibrosis-progression/" #"../data/"  #
+PATH_DATA =  "../data/"  #"../input/osic-pulmonary-fibrosis-progression/" #
 OFFSET_WEEKS = 5
 DEVICE = ("cuda" if torch.cuda.is_available() else "cpu")
 MAP_SMOKE = {"Ex-smoker":.5, "Currently smokes":1, "Never smoked":0}
@@ -75,11 +75,11 @@ def preprocessing_data(data, train=True):
             dictio = load(file_save)
 
         for col in ["FVC", "Age"]:
-            data[col] = (data[col] - dictio[col]["min"])/(dictio[col]["max"] - dictio[col]["min"])
+            data[col] = (data[col] - dictio[col]["min"])/(dictio[col]["max"] - dictio[col]["min"]) 
     return data
 
 
-def filter_data(data, id_patient=None, indice=None, path_folder=PATH_DATA):
+def filter_data(data, id_patient=None, indice=None, path_folder=PATH_DATA, train=True):
     """Return the data only for the id_patient."""
     if id_patient is None:
         id_patient = get_id_folders(indice, path_folder=path_folder)
@@ -87,27 +87,36 @@ def filter_data(data, id_patient=None, indice=None, path_folder=PATH_DATA):
     filtered_data = data[data.Patient == id_patient]
     week_val = filtered_data.Weeks.values
     
-    fvc = torch.zeros((140, 1)) #Avant (140)
-    percent = torch.zeros((140, 1)) #Avant (140)
-    weeks = torch.zeros((140))
-    misc = torch.zeros((140, 3))
-    ranger = torch.zeros((140))
-    for i, week in enumerate(week_val):
-        fvc[week + OFFSET_WEEKS] = filtered_data.FVC.values[i]
-        percent[week + OFFSET_WEEKS] = filtered_data.Percent.values[i]
-        weeks[week + OFFSET_WEEKS] = week + OFFSET_WEEKS #Alex 19/9
-        ranger[week + OFFSET_WEEKS] = 1
-    misc[:, 0] = torch.tensor(filtered_data.Age.values)[0]
-    misc[:, 1] = torch.tensor(filtered_data.Sex_Male.values)[0]
-    misc[:, 2] = torch.tensor(filtered_data.SmokeNum.values)[0]
-    return misc, fvc, percent, weeks, ranger
+    if train:
+        fvc = torch.zeros((140, 1)) #Avant (140)
+        percent = torch.zeros((140, 1)) #Avant (140)
+        weeks = torch.zeros((140))
+        misc = torch.zeros((140, 3))
+        ranger = torch.zeros((140))
+        
+        for i, week in enumerate(week_val):
+            fvc[week + OFFSET_WEEKS] = filtered_data.FVC.values[i]
+            percent[week + OFFSET_WEEKS] = filtered_data.Percent.values[i]
+            weeks[week + OFFSET_WEEKS] = week + OFFSET_WEEKS #Alex 19/9
+            ranger[week + OFFSET_WEEKS] = 1
+        misc[:, 0] = torch.tensor(filtered_data.Age.to_numpy())[0]
+        misc[:, 1] = torch.tensor(filtered_data.Sex_Male.to_numpy())[0]
+        misc[:, 2] = torch.tensor(filtered_data.SmokeNum.to_numpy())[0]
+        return misc, fvc, percent, weeks, ranger
+    
+    else:
+        fvc = torch.tensor(filtered_data.FVC.to_numpy())
+        percent = torch.tensor(filtered_data.Percent.to_numpy())
+        weeks = torch.tensor(filtered_data.Weeks.to_numpy())
+        misc = torch.tensor([filtered_data.Age.to_numpy(), filtered_data.Sex_Male.to_numpy(), filtered_data.SmokeNum.to_numpy()])
+        return misc, fvc, percent, weeks
 
 
 def get_data(train=True, path_folder=PATH_DATA):
     """Return the content proprocessed on the train.csv file (containing patient data)."""
     file = "train" if train else "test"
     raw_data = pd.read_csv(f"{path_folder}{file}.csv")
-    return preprocessing_data(raw_data)
+    return preprocessing_data(raw_data, train)
 
 
 def make_folds(nb_folds, path_folder = PATH_DATA):

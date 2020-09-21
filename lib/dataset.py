@@ -23,16 +23,19 @@ class Dataset(data.Dataset):
 
     def __getitem__(self, index):
         'Generates one sample of data'
+        if self.train:
+            scan = get_3d_scan(self.list_of_ids[index])
+            misc, fvc, percent,weeks, ranger = filter_data(self.data, self.list_of_ids[index])
+            scan = torch.tensor(scan).unsqueeze(0)
+            return (scan.float(), misc.float(), fvc.float(), percent.float(), weeks.float(), ranger.int())
         
-        try:
-            if self.train:
-                scan = get_3d_scan(self.list_of_ids[index])
-            else:
+        else:
+            try:
                 scan = process_3d_scan(self.list_of_ids[index], False)
-        except:
-            print("Error caught in Dataset. Returning zeros")
-            scan = np.zeros((32, 256, 256))   
-        # scan = np.zeros((32, 256, 256))      
-        misc, fvc, percent,weeks, ranger = filter_data(self.data, self.list_of_ids[index])
-        scan = torch.tensor(scan).unsqueeze(0)
-        return (scan.float(), misc.float(), fvc.float(), percent.float(), weeks.float(), ranger.int())
+            except:
+                print("Error caught in Dataset. Returning zeros")
+                scan = np.zeros((32, 256, 256))  
+                
+            misc, fvc, percent, weeks = filter_data(self.data, self.list_of_ids[index], train=False)
+            scan = torch.tensor(scan).unsqueeze(0)
+            return (scan.float(), misc.float(), fvc.float(), percent.float(), weeks.float())

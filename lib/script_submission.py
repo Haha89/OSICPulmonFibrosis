@@ -32,7 +32,6 @@ with open('minmax.pickle', 'rb') as minmax_file:
 unscale = lambda x: x*(min_max["max"] - min_max["min"]) + min_max["min"]
 
 
-
 #####################
 # Loading of data
 #####################
@@ -40,31 +39,24 @@ a = np.arange(0, len(test_df.Patient.unique()))
 testing_set = Dataset(a, train=False)
 testing_generator = data.DataLoader(testing_set, batch_size=1, shuffle=False)
 
-
-for i, (scans, misc, FVC, percent, weeks, ranger) in enumerate(testing_generator):
-    
-    ranger = np.where(ranger != 0)[1]
-    misc = misc[:,ranger[0],:].squeeze(1) #Dépend du m
-    fvc = FVC[:,ranger[0]]
-    std = torch.ones_like(fvc)*.7
-    fvc = torch.cat((fvc, std),1)
-    percent = percent[:,ranger[0]]
-    first_week = int(weeks[:, ranger[0]].cpu().detach().numpy()[0])
+for i, (scans, misc, fvc, percent, week) in enumerate(testing_generator):
+    print(f"{i+1}/{len(testing_generator)}")
+    fvc_std = torch.cat((fvc, torch.ones_like(fvc)*.7),1)
     weeks = torch.torch.from_numpy(np.arange(MIN_WEEK, MAX_WEEK+1)).float()
-    scans, misc = scans.to(DEVICE), misc.to(DEVICE)
-    fvc, percent, weeks = fvc.to(DEVICE), percent.to(DEVICE), weeks.to(DEVICE)
-    pred = model(scans, misc, fvc, percent, weeks-first_week)
+    scans, misc = scans.to(DEVICE), misc[:,:,0].to(DEVICE)
+    fvc_std, percent, weeks = fvc_std.to(DEVICE), percent.to(DEVICE), weeks.to(DEVICE)
+    first_week = int(week.cpu().detach().numpy()[0])
+    pred = model(scans, misc, fvc_std, percent, weeks-first_week)
     
-    #Deprocessing
+    #Postprocessing
     mean = unscale(pred[:, :, 0])
     std = pred[:, :, 1]*500    
-    goal = FVC[:,ranger]
-    goal = unscale(goal).to(DEVICE)
-    mean = mean  + (goal[:,0]- mean[:,first_week-MIN_WEEK])
+    goal = unscale(fvc).to(DEVICE)
+    mean = mean + (goal[:,0]- mean[:,first_week-MIN_WEEK])
+
     mean = mean.cpu().detach().numpy()[0]
     std = std.cpu().detach().numpy()[0]
     list_weeks = [test_df.Patient.unique()[i] + "_" + str(int(week.cpu().detach().numpy())) for week in weeks]
-
     df = pd.DataFrame({"Patient_Week": list_weeks, "FVC":mean, "Confidence":std})
     sub = pd.concat([sub, df], axis=0)
     
