@@ -17,7 +17,7 @@ DEVICE = ("cuda" if torch.cuda.is_available() else "cpu")
 PATH_DATA = '../data/'
 NB_FOLDS = 1
 LEARNING_RATE = 0.0001
-NUM_EPOCHS = 50
+NUM_EPOCHS = 75
 
 
 if __name__ == "__main__":
@@ -27,7 +27,7 @@ if __name__ == "__main__":
     for f in glob(f"{PATH_DATA}/histo-fold/histo-fold-*.pt"): #Removes existing histo-fold-X.pt
         remove(f)
         
-    FOLD_LABELS = np.load("4-folds-split.npy")
+    FOLD_LABELS = np.load("./4-folds-split.npy")
     
     for k in range(NB_FOLDS):
         print(f"Starting Fold {k}")
@@ -38,7 +38,8 @@ if __name__ == "__main__":
         model = ODE_Network(1, 10, (256, 256, 32), 16, 32, 3, 64)
         model.to(DEVICE)
         optimiser = optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=5e-8)
-    
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimiser, 'min')
+        
         #####################
         # Data loading
         #####################
@@ -114,12 +115,14 @@ if __name__ == "__main__":
                     loss = ode_laplace_log_likelihood(goal, mean, std, epoch, 25)
                     loss_test += loss
                     
+                    
             loss_train = loss_train/len(training_generator)
             loss_test = loss_test/len(testing_generator)
             print(f'| Epoch: {epoch+1} | Train Loss: {loss_train:.3f} | Test. Loss: {loss_test:.3f} |')
             histo[epoch, 0] = loss_train
             histo[epoch, 1] = loss_test
-        
+            scheduler.step(loss_test)
+            
         DATA_SAVE = {'weeks': weeks, 'fvc': fvc, 'misc': misc, 'goal': goal, 'mean': mean, 'std': std}
         torch.save(DATA_SAVE, f"{PATH_DATA}/saved_data/data_save.pt")        
         torch.save(histo, f"{PATH_DATA}/histo-fold/histo-fold-{k}.pt")
@@ -127,4 +130,6 @@ if __name__ == "__main__":
         CHECKPOINT = {'model': model,
                   'state_dict': model.state_dict(),
                   'optimiser' : optimiser.state_dict()}
-        torch.save(CHECKPOINT, f'../data/model/model-{k}.pth')
+
+        torch.save(CHECKPOINT['model'], '../data/model/model_6.pth')
+        torch.save(CHECKPOINT['state_dict'], '../data/model/state_6.pth')

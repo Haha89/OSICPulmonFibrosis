@@ -6,7 +6,6 @@ import torch
 from torch.utils import data
 from utils import get_data, filter_data, get_3d_scan
 from scan_processing import process_3d_scan
-import numpy as np
 
 class Dataset(data.Dataset):
     """Characterizes a dataset for PyTorch"""
@@ -33,8 +32,8 @@ class Dataset(data.Dataset):
             try:
                 scan = process_3d_scan(self.list_of_ids[index], False)
             except:
-                print("Error caught in scan creation. Returning zeros")
-                scan = np.zeros((32, 256, 256))  
+                print("Error caught in scan creation. Returning previous scan")
+                scan = process_3d_scan(self.list_of_ids[index-4], False)
 
             misc, fvc, percent, weeks = filter_data(self.data, self.list_of_ids[index], train=False)
             scan = torch.tensor(scan).unsqueeze(0)
