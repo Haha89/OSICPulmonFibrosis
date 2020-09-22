@@ -14,7 +14,7 @@ import scan_processing
 # Display the list of CT scans of a patient
 # =============================================================================
 
-ID_PATIENT = "ID00010637202177584971671"
+ID_PATIENT = "ID00421637202311550012437"
 scan_filenames = utils.get_scans_from_id(ID_PATIENT)
 print(f"List of CT scans found for id : {id}")
 print(scan_filenames)

@@ -34,7 +34,8 @@ class Dataset(data.Dataset):
                 scan = process_3d_scan(self.list_of_ids[index], False)
             except:
                 print("Error caught in scan creation. Returning zeros")
-                scan = np.zeros((32, 256, 256))  
+                with np.load("../input/localosic/OSICPulmonFibrosis-master/data/scans/ID00421637202311550012437.npy") as scan_file:
+                    scan = scan_file
 
             misc, fvc, percent, weeks = filter_data(self.data, self.list_of_ids[index], train=False)
             scan = torch.tensor(scan).unsqueeze(0)
