@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from pickle import dump, load
 
-PATH_DATA = "../input/osic-pulmonary-fibrosis-progression/" #"../data/"  # 
+PATH_DATA = "../data/"  # "../input/osic-pulmonary-fibrosis-progression/" #
 OFFSET_WEEKS = 5
 DEVICE = ("cuda" if torch.cuda.is_available() else "cpu")
 MAP_SMOKE = {"Ex-smoker":.5, "Currently smokes":1, "Never smoked":0}
@@ -167,10 +167,9 @@ def ode_laplace_log_likelihood(actual_fvc, predicted_fvc, confidence, epoch, epo
     """
     if epoch > epoch_max : 
         std_clipped = torch.max(confidence, torch.tensor([70.]).to(DEVICE))
-        delta = torch.min(torch.abs(actual_fvc - predicted_fvc), torch.tensor([1000.]).to(DEVICE))
+        delta = torch.min(torch.abs(actual_fvc[:, :, 0] - predicted_fvc), torch.tensor([1000.]).to(DEVICE))
     else :
         std_clipped = torch.abs(confidence)
-        delta = torch.abs(actual_fvc - predicted_fvc)
-        
+        delta = torch.abs(actual_fvc[:, :, 0] - predicted_fvc)
     metric = (- sqrt(2) * delta / std_clipped - torch.log(sqrt(2) * std_clipped))
     return -metric.mean()

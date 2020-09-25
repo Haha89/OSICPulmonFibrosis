@@ -62,7 +62,7 @@ for i, (scans, misc, fvc, percent, week) in enumerate(testing_generator):
     except:
         weeks = torch.torch.from_numpy(np.arange(MIN_WEEK, MAX_WEEK+1)).float()
         list_weeks = [test_df.Patient.unique()[i] + "_" + str(int(week.cpu().detach().numpy())) for week in weeks]
-        mean = np.ones((len(list_weeks)))*2000
+        mean = np.ones((len(list_weeks)))*2700
         std  = np.ones((len(list_weeks)))*250
         
     df = pd.DataFrame({"Patient_Week": list_weeks, "FVC":mean, "Confidence":std})
