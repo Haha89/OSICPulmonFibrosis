@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from pickle import dump, load
 
-PATH_DATA = "../data/"  # "../input/osic-pulmonary-fibrosis-progression/" #
+PATH_DATA =  "../input/osic-pulmonary-fibrosis-progression/" #"../data/"  #
 OFFSET_WEEKS = 5
 DEVICE = ("cuda" if torch.cuda.is_available() else "cpu")
 MAP_SMOKE = {"Ex-smoker":.5, "Currently smokes":1, "Never smoked":0}
