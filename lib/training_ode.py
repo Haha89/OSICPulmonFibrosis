@@ -17,7 +17,7 @@ DEVICE = ("cuda" if torch.cuda.is_available() else "cpu")
 PATH_DATA = '../data/'
 NB_FOLDS = 1
 LEARNING_RATE = 0.0001
-NUM_EPOCHS = 50
+NUM_EPOCHS = 75
 
 
 if __name__ == "__main__":
@@ -84,8 +84,8 @@ if __name__ == "__main__":
                 std = pred[:, :, 1]*500 
                 goal = FVC[:,ranger]
                 goal = unscale(goal).to(DEVICE)
-                # mean = mean  + (goal[:,0]- mean[:,0])
-                loss = ode_laplace_log_likelihood(goal, mean, std, epoch, 25)
+                mean = mean  + (goal[:,0]- mean[:,0])
+                loss = ode_laplace_log_likelihood(goal, mean, std, epoch, -1)
                 loss_train += loss
                 loss.backward() # Gradient Computation
                 optimiser.step() # Update parameters
@@ -112,7 +112,7 @@ if __name__ == "__main__":
                     goal = FVC[:,ranger]
                     goal = unscale(goal).to(DEVICE)
                     mean = mean  + (goal[:,0]- mean[:,0])
-                    loss = ode_laplace_log_likelihood(goal, mean, std, epoch, 25)
+                    loss = ode_laplace_log_likelihood(goal, mean, std, epoch, -1)
                     loss_test += loss
                     
                     

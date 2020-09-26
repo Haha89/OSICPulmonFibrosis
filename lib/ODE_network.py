@@ -174,12 +174,8 @@ class ODE_Network(nn.Module):
         evolution = torch.cat((outputs_scan, misc, fvc, percent), -1)
         evolution = F.relu(self.data_process1(evolution))
         # evolution = F.relu(self.data_process2(evolution))
-        try:
-            latent = odeint(self.func,evolution, weeks.squeeze(0)).permute(1,0,2)
-        except:
-            print(evolution)
-            print(weeks)
-        
+        latent = odeint(self.func,evolution, weeks.squeeze(0)).permute(1,0,2)
+       
         evolution = F.relu(self.decode1(latent))
         output = self.decode2(evolution)
         return nn.Sigmoid()(output)
