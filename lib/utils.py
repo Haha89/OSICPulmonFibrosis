@@ -173,3 +173,13 @@ def ode_laplace_log_likelihood(actual_fvc, predicted_fvc, confidence, epoch, epo
         delta = torch.abs(actual_fvc[:, :, 0] - predicted_fvc)
     metric = (- sqrt(2) * delta / std_clipped - torch.log(sqrt(2) * std_clipped))
     return -metric.mean()
+
+
+def pinball_loss(actual_fvc, predicted_fvc):
+    tau = 0.95
+    err = actual_fvc[:, :, 0] - predicted_fvc
+    return torch.max(tau * err, (tau - 1) * err).mean()
+
+
+def total_loss(actual_fvc, predicted_fvc, confidence, epoch, epoch_max):
+    return ode_laplace_log_likelihood(actual_fvc, predicted_fvc, confidence, epoch, epoch_max) + pinball_loss(actual_fvc, predicted_fvc)

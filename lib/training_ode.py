@@ -6,7 +6,7 @@ import torch
 import torch.optim as optim
 from torch.utils import data
 from ODE_network import ODE_Network
-from utils import train_test_indices, ode_laplace_log_likelihood
+from utils import train_test_indices, ode_laplace_log_likelihood, total_loss
 from dataset import Dataset
 from pickle import load
 from os import remove
@@ -85,7 +85,7 @@ if __name__ == "__main__":
                 goal = FVC[:,ranger]
                 goal = unscale(goal).to(DEVICE)
                 mean = mean  + (goal[:,0]- mean[:,0])
-                loss = ode_laplace_log_likelihood(goal, mean, std, epoch, -1)
+                loss = total_loss(goal, mean, std, epoch, -1)
                 loss_train += loss
                 loss.backward() # Gradient Computation
                 optimiser.step() # Update parameters
@@ -112,7 +112,7 @@ if __name__ == "__main__":
                     goal = FVC[:,ranger]
                     goal = unscale(goal).to(DEVICE)
                     mean = mean  + (goal[:,0]- mean[:,0])
-                    loss = ode_laplace_log_likelihood(goal, mean, std, epoch, -1)
+                    loss = total_loss(goal, mean, std, epoch, -1)
                     loss_test += loss
                     
                     
