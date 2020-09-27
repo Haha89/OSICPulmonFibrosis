@@ -17,7 +17,7 @@ DEVICE = ("cuda" if torch.cuda.is_available() else "cpu")
 PATH_DATA = '../data/'
 NB_FOLDS = 1
 LEARNING_RATE = 0.0001
-NUM_EPOCHS = 75
+NUM_EPOCHS = 50
 
 
 if __name__ == "__main__":

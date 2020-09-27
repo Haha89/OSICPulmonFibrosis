@@ -176,10 +176,12 @@ def ode_laplace_log_likelihood(actual_fvc, predicted_fvc, confidence, epoch, epo
 
 
 def pinball_loss(actual_fvc, predicted_fvc):
-    tau = 0.95
+    tau = 0.8
     err = actual_fvc[:, :, 0] - predicted_fvc
     return torch.max(tau * err, (tau - 1) * err).mean()
 
 
 def total_loss(actual_fvc, predicted_fvc, confidence, epoch, epoch_max):
-    return ode_laplace_log_likelihood(actual_fvc, predicted_fvc, confidence, epoch, epoch_max) + pinball_loss(actual_fvc, predicted_fvc)
+    lap = ode_laplace_log_likelihood(actual_fvc, predicted_fvc, confidence, epoch, epoch_max)
+    pinball = pinball_loss(actual_fvc, predicted_fvc)
+    return (2*lap + pinball)*0.33
