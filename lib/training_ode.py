@@ -17,7 +17,7 @@ DEVICE = ("cuda" if torch.cuda.is_available() else "cpu")
 PATH_DATA = '../data/'
 NB_FOLDS = 1
 LEARNING_RATE = 0.0001
-NUM_EPOCHS = 50
+NUM_EPOCHS = 40
 
 
 if __name__ == "__main__":
@@ -28,6 +28,7 @@ if __name__ == "__main__":
         remove(f)
         
     FOLD_LABELS = np.load("./4-folds-split.npy")
+    best_test_loss = 1000
     
     for k in range(NB_FOLDS):
         print(f"Starting Fold {k}")
@@ -123,13 +124,18 @@ if __name__ == "__main__":
             histo[epoch, 1] = loss_test
             scheduler.step(loss_test)
             
-        DATA_SAVE = {'weeks': weeks, 'fvc': fvc, 'misc': misc, 'goal': goal, 'mean': mean, 'std': std}
-        torch.save(DATA_SAVE, f"{PATH_DATA}/saved_data/data_save.pt")        
-        torch.save(histo, f"{PATH_DATA}/histo-fold/histo-fold-{k}.pt")
-        
-        CHECKPOINT = {'model': model,
+            if loss_test < best_test_loss:
+                best_test_loss = loss_test
+                CHECKPOINT = {'model': model,
                   'state_dict': model.state_dict(),
                   'optimiser' : optimiser.state_dict()}
 
-        torch.save(CHECKPOINT['model'], '../data/model/model_6.pth')
-        torch.save(CHECKPOINT['state_dict'], '../data/model/state_6.pth')
+                torch.save(CHECKPOINT['model'], '../data/model/model_6.pth')
+                torch.save(CHECKPOINT['state_dict'], '../data/model/state_6.pth')
+            
+                DATA_SAVE = {'weeks': weeks, 'fvc': fvc, 'misc': misc, 'goal': goal, 'mean': mean, 'std': std}
+                torch.save(DATA_SAVE, f"{PATH_DATA}/saved_data/data_save.pt")        
+                
+        torch.save(histo, f"{PATH_DATA}/histo-fold/histo-fold-{k}.pt")
+        
+        

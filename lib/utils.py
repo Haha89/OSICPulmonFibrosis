@@ -130,7 +130,7 @@ def make_folds(nb_folds, path_folder = PATH_DATA):
     nb_folds pour k-fold cross validation """
 
     batch_size = len(listdir(path_folder + 'train/'))
-    subfolders = [i for i in range(batch_size)]
+    subfolders = range(batch_size)
     #Chaque donnÃ©e Ã  un label
     fold_label = np.zeros(batch_size, dtype=int)
     items_per_fold = batch_size//nb_folds
@@ -176,12 +176,13 @@ def ode_laplace_log_likelihood(actual_fvc, predicted_fvc, confidence, epoch, epo
 
 
 def pinball_loss(actual_fvc, predicted_fvc):
-    tau = 0.8
+    qs = torch.transpose(torch.FloatTensor([0.2, 0.50, 0.8]).unsqueeze(0), 0, -1).to(DEVICE)
     err = actual_fvc[:, :, 0] - predicted_fvc
-    return torch.max(tau * err, (tau - 1) * err).mean()
+    return torch.max(qs * err, (qs - 1) * err).mean()
 
 
 def total_loss(actual_fvc, predicted_fvc, confidence, epoch, epoch_max):
     lap = ode_laplace_log_likelihood(actual_fvc, predicted_fvc, confidence, epoch, epoch_max)
     pinball = pinball_loss(actual_fvc, predicted_fvc)
-    return (2*lap + pinball)*0.33
+    _lambda = 0.65
+    return _lambda*lap + (1-_lambda)*pinball
