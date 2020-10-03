@@ -25,7 +25,7 @@ class Dataset(data.Dataset):
         'Generates one sample of data'
         if self.train:
             scan = get_3d_scan(self.list_of_ids[index])
-            misc, fvc, percent,weeks, ranger = filter_data(self.data, self.list_of_ids[index])
+            misc, fvc, percent, weeks, ranger = filter_data(self.data, self.list_of_ids[index])
             scan = torch.tensor(scan).unsqueeze(0)
             return (scan.float(), misc.float(), fvc.float(), percent.float(), weeks.float(), ranger.int())
 

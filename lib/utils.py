@@ -9,8 +9,9 @@ import torch
 import numpy as np
 import pandas as pd
 from pickle import dump, load
+from scipy.interpolate import interp1d
 
-PATH_DATA =  "../input/osic-pulmonary-fibrosis-progression/" #"../data/"  #
+PATH_DATA = "../input/osic-pulmonary-fibrosis-progression/" #"../data/"  # 
 OFFSET_WEEKS = 5
 DEVICE = ("cuda" if torch.cuda.is_available() else "cpu")
 MAP_SMOKE = {"Ex-smoker":.5, "Currently smokes":1, "Never smoked":0}
@@ -56,7 +57,7 @@ def unormalize_fvc(data):
 
 def preprocessing_data(data, train=True, path_file=PATH_DATA):
     """Preprocess the csv file, add one hot encoder and normalization between [0,1]."""
-    
+    data.drop_duplicates(subset=['Patient', 'Weeks'], inplace=True)
     data["Percent"] = data["Percent"]/100.
     data["SmokeNum"] = data['SmokingStatus'].map(MAP_SMOKE)
     data["Sex_Male"] = data['Sex'].map({"Male": 1, "Female": 0})
@@ -100,14 +101,30 @@ def filter_data(data, id_patient=None, indice=None, path_folder=PATH_DATA, train
         misc = torch.zeros((140, 3))
         ranger = torch.zeros((140))
         
-        for i, week in enumerate(week_val):
-            fvc[week + OFFSET_WEEKS] = filtered_data.FVC.values[i]
-            percent[week + OFFSET_WEEKS] = filtered_data.Percent.values[i]
-            weeks[week + OFFSET_WEEKS] = week + OFFSET_WEEKS #Alex 19/9
-            ranger[week + OFFSET_WEEKS] = 1
         misc[:, 0] = torch.tensor(filtered_data.Age.to_numpy())[0]
         misc[:, 1] = torch.tensor(filtered_data.Sex_Male.to_numpy())[0]
         misc[:, 2] = torch.tensor(filtered_data.SmokeNum.to_numpy())[0]
+        
+        # for i, week in enumerate(week_val):
+        #     fvc[week + OFFSET_WEEKS] = filtered_data.FVC.values[i]
+        #     percent[week + OFFSET_WEEKS] = filtered_data.Percent.values[i]
+        #     weeks[week + OFFSET_WEEKS] = week + OFFSET_WEEKS #Alex 19/9
+        #     ranger[week + OFFSET_WEEKS] = 1
+        
+        #interpolation
+        interpol_fvc = interp1d(week_val, filtered_data.FVC.values, kind="linear")
+        interpol_percent = interp1d(week_val, filtered_data.Percent.values, kind="linear")
+        min_week= np.min(week_val)
+        max_week = np.max(week_val)
+        
+        predictions_fvc = interpol_fvc(range(min_week, max_week + 1))
+        predictions_percent = interpol_percent(range(min_week, max_week + 1))
+
+        for i, week in enumerate(range(min_week, max_week + 1)):
+            fvc[week + OFFSET_WEEKS] = predictions_fvc[i]
+            percent[week + OFFSET_WEEKS] = predictions_percent[i]
+            weeks[week + OFFSET_WEEKS] = week + OFFSET_WEEKS #Alex 19/9
+            ranger[week + OFFSET_WEEKS] = 1
         return misc, fvc, percent, weeks, ranger
     
     else:
@@ -116,6 +133,7 @@ def filter_data(data, id_patient=None, indice=None, path_folder=PATH_DATA, train
         weeks = torch.tensor(filtered_data.Weeks.to_numpy())
         misc = torch.tensor([filtered_data.Age.to_numpy(), filtered_data.Sex_Male.to_numpy(), filtered_data.SmokeNum.to_numpy()])
         return misc, fvc, percent, weeks
+
 
 
 def get_data(train=True, path_folder=PATH_DATA):

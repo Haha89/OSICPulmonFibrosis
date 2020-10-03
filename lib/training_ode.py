@@ -6,7 +6,7 @@ import torch
 import torch.optim as optim
 from torch.utils import data
 from ODE_network import ODE_Network
-from utils import train_test_indices, ode_laplace_log_likelihood, total_loss
+from utils import train_test_indices, total_loss
 from dataset import Dataset
 from pickle import load
 from os import remove
@@ -124,18 +124,17 @@ if __name__ == "__main__":
             histo[epoch, 1] = loss_test
             scheduler.step(loss_test)
             
-            if loss_test < best_test_loss:
-                best_test_loss = loss_test
-                CHECKPOINT = {'model': model,
+            CHECKPOINT = {'model': model,
                   'state_dict': model.state_dict(),
                   'optimiser' : optimiser.state_dict()}
-
+                    
+            if loss_test < best_test_loss:
+                best_test_loss = loss_test
                 torch.save(CHECKPOINT['model'], '../data/model/model_6.pth')
                 torch.save(CHECKPOINT['state_dict'], '../data/model/state_6.pth')
-            
                 DATA_SAVE = {'weeks': weeks, 'fvc': fvc, 'misc': misc, 'goal': goal, 'mean': mean, 'std': std}
                 torch.save(DATA_SAVE, f"{PATH_DATA}/saved_data/data_save.pt")        
                 
         torch.save(histo, f"{PATH_DATA}/histo-fold/histo-fold-{k}.pt")
-        
-        
+        torch.save(CHECKPOINT['model'], '../data/model/model_final.pth')
+        torch.save(CHECKPOINT['state_dict'], '../data/model/state_final.pth')
