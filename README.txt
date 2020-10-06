@@ -1,3 +1,5 @@
+## OSIC Pulmonary Fibrosis Progression
+
 Kaggle : https://www.kaggle.com/c/osic-pulmonary-fibrosis-progression
 
 The aim of this competition is to predict a patient’s severity of decline in lung function based on a CT scan of their lungs. Lung function is assessed based on output from a spirometer, which measures the forced vital capacity (FVC), i.e. the volume of air exhaled.
@@ -8,18 +10,19 @@ In the training set, you are provided with an anonymized, baseline CT scan and t
 In the test set, you are provided with a baseline CT scan and only the initial FVC measurement. You are asked to predict the final three FVC measurements for each patient, as well as a confidence value in your prediction.
 Since this is real medical data, you will notice the relative timing of FVC measurements varies widely. The timing of the initial measurement relative to the CT scan and the duration to the forecasted time points may be different for each patient. This is considered part of the challenge of the competition. To avoid potential leakage in the timing of follow up visits, you are asked to predict every patient's FVC measurement for every possible week. Those weeks which are not in the final three visits are ignored in scoring.
 
-Projet's architecture
+## Projet's architecture
 
 osic-pulmonary-fibrosis-progression/
 	data/
-		test/
-		train/
-		sample_submission.csv
-		test.csv
-		train.csv
+		- test/: contains patients scans from test set  
+		- train/: contains patients scans from training set 
+		- models/: contains the trained network
+		- scans/: contains the preprocessed scans from the training data set
+		- sample_submission.csv : output format for submission   
+		- test.csv: test patient tabular data
+		- train.csv: training patient tabular data
 
 	lib/
-		EDA.py
-		tools.py
-		examples1.py
-		test.py
+		- data_analysis.py: script to generate charts and EDA
+		- utils.py: bunch of useful functions used throughout the scripts
+		- examples-001 to 005.py: some test scripts
