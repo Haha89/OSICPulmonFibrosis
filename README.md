@@ -13,16 +13,22 @@ Since this is real medical data, you will notice the relative timing of FVC meas
 ## Projet's architecture
 
 osic-pulmonary-fibrosis-progression/
-	data/
-		- test/: contains patients scans from test set  
-		- train/: contains patients scans from training set 
-		- models/: contains the trained network
-		- scans/: contains the preprocessed scans from the training data set
-		- sample_submission.csv : output format for submission   
-		- test.csv: test patient tabular data
-		- train.csv: training patient tabular data
-
-	lib/
-		- data_analysis.py: script to generate charts and EDA
-		- utils.py: bunch of useful functions used throughout the scripts
-		- examples-001 to 005.py: some test scripts
+- data/
+	- test/: contains patients scans from test set  
+	- train/: contains patients scans from training set 
+	- models/: contains the trained network
+	- scans/: contains the preprocessed scans from the training data set
+	- sample_submission.csv : output format for submission   
+	- test.csv: test patient tabular data
+	- train.csv: training patient tabular data
+		
+- lib/
+	- data_analysis.py: script to generate charts and EDA
+	- utils.py: bunch of useful functions used throughout the scripts
+	- ODE_network.py: contains the definition of our neural network
+	- dataset.py: contains the dataset definition
+	- training_ode and full_trainging: training scripts (with and without test/val)
+	- script_submission : script to create the submission.csv file
+	- batch_3d_scan: script to preprocess the 3d-scans from training dataset
+	- scan_preprocessing.py: contains functions to preprocess the 3d-scans
+	- examples-001 to 005.py: some test scripts
