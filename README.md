@@ -11,16 +11,14 @@ In the test set, you are provided with a baseline CT scan and only the initial F
 Since this is real medical data, you will notice the relative timing of FVC measurements varies widely. The timing of the initial measurement relative to the CT scan and the duration to the forecasted time points may be different for each patient. This is considered part of the challenge of the competition. To avoid potential leakage in the timing of follow up visits, you are asked to predict every patient's FVC measurement for every possible week. Those weeks which are not in the final three visits are ignored in scoring.
 
 ## Projet's architecture
+You will need the dataset located : https://www.kaggle.com/c/osic-pulmonary-fibrosis-progression/data
 
 osic-pulmonary-fibrosis-progression/
 - data/
-	- test/: contains patients scans from test set  
-	- train/: contains patients scans from training set 
+
 	- models/: contains the trained network
-	- scans/: contains the preprocessed scans from the training data set
-	- sample_submission.csv : output format for submission   
-	- test.csv: test patient tabular data
-	- train.csv: training patient tabular data
+	- OSIC-EDA.html: file used for exploratory data analysis
+
 		
 - lib/
 	- data_analysis.py: script to generate charts and EDA
